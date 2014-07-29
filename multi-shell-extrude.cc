@@ -85,6 +85,8 @@ static void CreateExtrusion(PolarFunction *fun, double thread_depth,
                             double angle_step, double extrusion_factor) {
   printf("; Screw center X=%.1f Y=%.1f r=%.1f thread-depth=%.1f\n",
          offset_x, offset_y, radius, thread_depth);
+  bool fan_is_on = false;
+  printf("M106 S0 ; fan off initially\n");
   double angle = 0;
   double last_x = radius, last_y = 0, last_h = 0;
   double total_dist = 0;
@@ -99,25 +101,29 @@ static void CreateExtrusion(PolarFunction *fun, double thread_depth,
            x + offset_x, y + offset_y, height,
            total_dist * extrusion_factor);
     last_x = x; last_y = y; last_h = height;
+    if (height > 1.5 && !fan_is_on) {
+      printf("M106 S255 ; 1.5mm reached - fan on\n");
+      fan_is_on = true;
+    }
   }
 }
 
 int main(int argc, char *argv[]) {
-  double pitch = 20.0;
-  double layer_height = 0.2;
+  double pitch = 30.0;
+  double layer_height = 0.16;
   double nozzle_radius = 0.4 / 2;
   double filament_radius = 1.75 / 2;
   double total_height = -1;
-  int rotation_steps = 480;
+  int rotation_steps = 720;
   double radius = 10.0;
-  double radius_increment = 1.5;
+  double radius_increment = 1.8;
   double start_x = 40;
   double start_y = 40;
   double offset_x = 50;
   double offset_y = 50;
   double feed_mm_per_sec = 100;
-  double thread_depth = radius / 4;
-  double extrusion_fudge_factor = 2.0;
+  double thread_depth = radius / 5;
+  double extrusion_fudge_factor = 1.9;  // to make work properly :)
   double extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
   int nested_screw_count = 3;
@@ -130,7 +136,7 @@ int main(int argc, char *argv[]) {
     case 't': fun_init = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
     case 'n': nested_screw_count = atoi(optarg); break;
-    case 'r': radius = atof(optarg); thread_depth = radius / 4; break;
+    case 'r': radius = atof(optarg); thread_depth = radius / 5; break;
     case 'R': radius_increment = atof(optarg); break;
     case 'l': layer_height = atof(optarg); break;
     case 'f': feed_mm_per_sec = atof(optarg); break;
@@ -143,7 +149,7 @@ int main(int argc, char *argv[]) {
   if (total_height < 0)
     return usage(argv[0]);
 
-  printf("; (some Henner Hack)\n"
+  printf("; https://github.com/hzeller/gcode-multi-shell-extrude\n"
          "; screw template '%s'\n"
          "; r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n"
          "; feed=%.1fmm/s pitch=%.1fmm/turn layer-height=%.3f\n"
@@ -180,9 +186,10 @@ int main(int argc, char *argv[]) {
     x += offset_x + radius;
     y += offset_y + radius;
     radius += radius_increment;
-    printf("G1 X%.4f Y%.4f\n", x, y);
+    printf("G1 X%.3f Y%.3f\n", x, y);
   }
 
   printf("M104 S0\nM84\n");
+  printf("M106 S0 ; fan off\n");
   printf("G1 Z%.3f\n", total_height + 5);
 }
