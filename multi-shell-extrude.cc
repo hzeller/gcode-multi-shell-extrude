@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <vector>
+#include <algorithm>
 
 class PolarFunction {
 public:
@@ -55,6 +56,10 @@ static double distance(double dx, double dy, double dz) {
   return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
+static int quantize_up(int x, int q) {
+  return q * ((x + q - 1) / q);
+}
+
 static int usage(const char *progname) {
   fprintf(stderr, "Usage: %s -t <template> [-p <height-per-rotation-mm>]\n",
           progname);
@@ -73,6 +78,7 @@ static int usage(const char *progname) {
           "\t -n <number-of-screws> : number of screws to be printed\n"
           "\t -r <radius>       : radius of the smallest screw\n"
           "\t -R <radius-increment> : increment between screws\n"
+          "\t -d <thread-depth> : depth of thread (default: radius/5)\n"
           "\t -l <layer-height> : Height of each layer\n"
           "\t -f <feed-rate>    : in mm/s\n"
           "\t -p <pitch>        : how many mm height a full screw-turn takes\n");
@@ -114,7 +120,7 @@ int main(int argc, char *argv[]) {
   double nozzle_radius = 0.4 / 2;
   double filament_radius = 1.75 / 2;
   double total_height = -1;
-  int rotation_steps = 720;
+  int faces = 720;
   double radius = 10.0;
   double radius_increment = 1.8;
   double start_x = 40;
@@ -122,22 +128,23 @@ int main(int argc, char *argv[]) {
   double offset_x = 50;
   double offset_y = 50;
   double feed_mm_per_sec = 100;
-  double thread_depth = radius / 5;
+  double thread_depth = -1;
   double extrusion_fudge_factor = 1.9;  // to make work properly :)
   double extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
-  int nested_screw_count = 3;
+  int screw_count = 3;
 
   const char *fun_init = "AABBBAABBBAABBB";
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:l:f:p:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
-    case 'n': nested_screw_count = atoi(optarg); break;
-    case 'r': radius = atof(optarg); thread_depth = radius / 5; break;
+    case 'n': screw_count = atoi(optarg); break;
+    case 'r': radius = atof(optarg); break;
     case 'R': radius_increment = atof(optarg); break;
+    case 'd': thread_depth = atof(optarg); break;
     case 'l': layer_height = atof(optarg); break;
     case 'f': feed_mm_per_sec = atof(optarg); break;
     case 'p': pitch = atof(optarg); break;
@@ -149,13 +156,36 @@ int main(int argc, char *argv[]) {
   if (total_height < 0)
     return usage(argv[0]);
 
+  if (thread_depth < 0)
+    thread_depth = radius / 5;
+
+  if (thread_depth >= radius) {
+    fprintf(stderr, "Thread-depth larger than radius won't work :)\n");
+    return 1;
+  }
+  // We want the number of faces in a way, that the error introduced would be
+  // less than the layer_height.
+  // max_r is the maxium radius we'll see on the biggest shell
+  const double max_r = radius + (screw_count-1) * radius_increment + thread_depth;
+  const double max_error = layer_height/2;  // maximum error to tolerate
+  // Maximum lenght of one edge of our cylinder, that should not differ more
+  // than max_error in the middle. Half a segment is a nice perpendicular
+  // triangle
+  const double half_segment = sqrt((max_r*max_r)
+                                   - (max_r - max_error)*(max_r - max_error));
+  faces = ceil((2 * M_PI * max_r) / (2 * half_segment));
+  faces = std::max((int) (5 * strlen(fun_init)), faces);
+  faces = quantize_up(faces, strlen(fun_init));   // same sampling per define.
+  if (faces % 2 == 0) faces += strlen(fun_init);  // We want and odd number.
   printf("; https://github.com/hzeller/gcode-multi-shell-extrude\n"
          "; screw template '%s'\n"
          "; r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n"
+         "; thread-depth=%.1fmm faces=%d\n"
          "; feed=%.1fmm/s pitch=%.1fmm/turn layer-height=%.3f\n"
          ";----\n",
          fun_init,
-         radius, total_height, nested_screw_count, radius_increment,
+         radius, total_height, screw_count, radius_increment,
+         thread_depth, faces,
          feed_mm_per_sec, pitch,
          layer_height);
 
@@ -172,11 +202,11 @@ int main(int argc, char *argv[]) {
   printf("M83\nG1 E-3 ; retract\nM82\n");  // relative, retract, absolute
 
   printf("G1 F%.1f\n", feed_mm_per_sec * 60);
-  const double height_step = layer_height / rotation_steps;
-  const double angle_step = 1.0 / rotation_steps;
+  const double height_step = layer_height / faces;
+  const double angle_step = 1.0 / faces;
   double x = start_x + radius;
   double y = start_y + radius;
-  for (int i = 0; i < nested_screw_count; ++i) {
+  for (int i = 0; i < screw_count; ++i) {
     printf("G92 E0  ; start extrusion\n");
     CreateExtrusion(&f, thread_depth,
                     x, y, radius, height_step, total_height,
