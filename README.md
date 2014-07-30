@@ -1,5 +1,5 @@
-Continuous extrude multipole shells
-===================================
+Continuous extrude multiple shells
+==================================
 
 Printing multiple shells within one print usually means to move the print-head
 between each layer. That means that there are ugly seams between layers.
@@ -24,8 +24,10 @@ Right now with very simplistic gantry avoidance: print diagonally.
              -n <number-of-screws> : number of screws to be printed
              -r <radius>       : radius of the smallest screw
              -R <radius-increment> : increment between screws
+             -d <thread-depth> : depth of thread (default: radius/5)
              -l <layer-height> : Height of each layer
-             -f <feed-rate>    : in mm/s
+             -f <feed-rate>    : maximum, in mm/s
+             -T <layer-time>   : min time per layer; dynamically influences -f
              -p <pitch>        : how many mm height a full screw-turn takes
 
 Output is on stdout.
