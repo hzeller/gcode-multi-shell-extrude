@@ -1,6 +1,6 @@
 /* -*- mode: c++; c-basic-offset: 2; indent-tabs-mode: nil; -*-
  * (c) 2014 Henner Zeller <h.zeller@acm.org>
- * Public Domain - do whatever you want with it.
+ * Creative commons BY-SA
  */
 
 #include <assert.h>
