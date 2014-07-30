@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
   double offset_x = 50;
   double offset_y = 50;
   double feed_mm_per_sec = 100;
-  double min_layer_time = 3.0;
+  double min_layer_time = 4.5;
   double thread_depth = -1;
   double extrusion_fudge_factor = 1.9;  // empiric...
   int screw_count = 3;
@@ -227,7 +227,8 @@ int main(int argc, char *argv[]) {
     double layer_feedrate = 2 * M_PI * radius / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printf("G92 E0  ; start extrusion\n");
-    printf("G1 F%.1f\n", layer_feedrate * 60);
+    printf("G1 F%.1f  ; feedrate = %.1fmm/s\n", layer_feedrate * 60,
+           layer_feedrate);
     double travel = CreateExtrusion(&f, thread_depth,
                                     x, y, radius, height_step, total_height,
                                     angle_step, filament_extrusion_factor);
