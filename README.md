@@ -4,8 +4,9 @@ Continuous extrude multiple shells
 Little aesthetic/artwork kinda stuff. Nice to play with, but don't expect it
 to be useful :)
 Inspired by shells I have seen
-created by [Chris K. Palmer](http://shadowfolds.com/).
+created by [Chris K. Palmer](http://shadowfolds.com/):
 <a href="http://shadowfolds.com/?p=54"><img src="https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/chris-palmer-shells.jpg"></a>
+<br/>Nested screws by Chris K. Palmer.
 
 Printing multiple shells within one print usually means to move the print-head
 between each layer; moving the print-head creates visible seams between layers.
