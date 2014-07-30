@@ -48,7 +48,9 @@ The result are shells that can be screwed into each other
 ![Result][result]
 
 This result was created with this commandline:
-`./multi-shell-extrude -l 0.12 -d 2 -r 10 -R 1.5 -T 4 -n 4 -h 60`
+
+    ./multi-shell-extrude -l 0.12 -d 2 -r 10 -R 1.5 -T 4 -n 4 -h 60
+
 Printed twice with different filaments.
 
 TODO
