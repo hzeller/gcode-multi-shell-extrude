@@ -45,7 +45,8 @@ Each shell is extruded separately in a single spiral ('vase'-like) run, so that
 there is no seam between layers. Multiple shells can be printed on the same bed:
 each vase is printed to its full height, then the next one is printed next to
 it. To avoid physical collisions, they are printed diagonally so that the
-printhead does not touch the already printed one.
+printhead does not touch the already printed one (Use the `-o` option to configure
+the needed clearance).
 
 ![Print diagonally][print]
 
