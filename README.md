@@ -1,16 +1,15 @@
 Continuous extrude multiple shells
 ==================================
 
-Little useless aesthetic/artwork kinda stuff.
+Little aesthetic/artwork kinda stuff. Nice to play with, but don't expect it
+to be useful :)
+Inspired by shells I have seen created by [Chris Palmer](http://shadowfolds.com/).
 
 Printing multiple shells within one print usually means to move the print-head
-between each layer. That means that there are ugly seams between layers.
+between each layer; moving the print-head creates visible seams between layers.
 
-This program generates GCode so that multiple continuous shells can be
-printed on the same printbed, consecutively. No extra slicer needed; in fact
-this works so well because there is no extra slicer.
-
-Right now with very simplistic gantry avoidance: print diagonally.
+This program generates GCode directly (no extra slicer needed) in a way that
+multiple continuous shells are printed on the same printbed in sequence.
 
     Usage: ./multi-shell-extrude -t <template> [-p <height-per-rotation-mm>]
     Template describes shape. The letters in that string describe the
@@ -33,11 +32,13 @@ Right now with very simplistic gantry avoidance: print diagonally.
              -T <layer-time>   : min time per layer; dynamically influences -f
              -p <pitch>        : how many mm height a full screw-turn takes
 
-Output is on stdout.
+GCode-output is on stdout.
 
 Each shell is extruded separately in a single spiral ('vase'-like) run, so that
-there is no seam between layers. Multiple shells can be printed on the same bed,
-so to not interfere, they are printed diagonally.
+there is no seam between layers. Multiple shells can be printed on the same bed:
+each vase is printed to its full height, then the next one is printed next to
+it. To avoid physical collisions, they are printed diagonally so that the
+printhead does not touch the already printed one.
 
 ![Print diagonally][print]
 
@@ -45,8 +46,9 @@ The result are shells that can be screwed into each other
 
 ![Result][result]
 
-Commandline here:
+This result was created with this commandline:
 `./multi-shell-extrude -l 0.12 -d 2 -r 10 -R 1.5 -T 4 -n 4 -h 60`
+Printed twice with different filaments.
 
 TODO
 ====
