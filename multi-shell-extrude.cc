@@ -62,7 +62,7 @@ static int quantize_up(int x, int q) {
 }
 
 static int usage(const char *progname) {
-  fprintf(stderr, "Usage: %s -t <template> [-p <height-per-rotation-mm>]\n",
+  fprintf(stderr, "Usage: %s -h <height> [<options>]\n",
           progname);
   fprintf(stderr,
           "Template describes shape. The letters in that string describe the\n"
@@ -83,7 +83,10 @@ static int usage(const char *progname) {
           "\t -l <layer-height> : Height of each layer\n"
           "\t -f <feed-rate>    : maximum, in mm/s\n"
           "\t -T <layer-time>   : min time per layer; dynamically influences -f\n"
-          "\t -p <pitch>        : how many mm height a full screw-turn takes\n");
+          "\t -p <pitch>        : how many mm height a full screw-turn takes\n"
+          "\t -L <x,y>          : x/y size limit of your printbed.\n"
+          "\t -o <dx,dy>        : dx/dy offset per print. Clearance needed from\n"
+          "\t                     hotend-tip to left and front essentially.\n");
   return 1;
 }
 
@@ -125,23 +128,24 @@ int main(int argc, char *argv[]) {
   double nozzle_radius = 0.4 / 2;
   double filament_radius = 1.75 / 2;
   double total_height = -1;
+  double machine_limit_x = 150, machine_limit_y = 150;
   int faces = 720;
   double radius = 10.0;
   double radius_increment = 1.6;
-  double start_x = 40;
-  double start_y = 40;
-  double offset_x = 50;
-  double offset_y = 50;
+  double start_x = 10;
+  double start_y = 10;
+  double offset_x = 45;
+  double offset_y = 45;
   double feed_mm_per_sec = 100;
   double min_layer_time = 4.5;
   double thread_depth = -1;
   double extrusion_fudge_factor = 1.9;  // empiric...
-  int screw_count = 3;
+  int screw_count = 2;
 
   const char *fun_init = "AABBBAABBBAABBB";
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
@@ -152,6 +156,16 @@ int main(int argc, char *argv[]) {
     case 'l': layer_height = atof(optarg); break;
     case 'f': feed_mm_per_sec = atof(optarg); break;
     case 'T': min_layer_time = atof(optarg); break;
+    case 'L':
+      if (2 != sscanf(optarg, "%lf,%lf", &machine_limit_x, &machine_limit_y)) {
+        usage(argv[0]);
+      }
+      break;
+    case 'o':
+      if (2 != sscanf(optarg, "%lf,%lf", &offset_x, &offset_y)) {
+        usage(argv[0]);
+      }
+      break;
     case 'p': pitch = atof(optarg); break;
     default:
       return usage(argv[0]);
@@ -171,6 +185,10 @@ int main(int argc, char *argv[]) {
 
   const double filament_extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
+
+  // Some sensible start pos.
+  start_x = std::max(start_x, radius + thread_depth + 5);
+  start_y = std::max(start_y, radius + thread_depth + 5);
 
   // We want the number of faces in a way, that the error introduced would be
   // less than the layer_height.
@@ -193,12 +211,14 @@ int main(int argc, char *argv[]) {
          "; thread-depth=%.1fmm faces=%d\n"
          "; feed=%.1fmm/s (maximum; layer time at least %.1f s)\n"
          "; pitch=%.1fmm/turn layer-height=%.3f\n"
+         "; machine limits: bed: (%.0f/%.0f):  head-offset: (%.0f,%.0f)\n"
          ";----\n",
          fun_init,
          radius, total_height, screw_count, radius_increment,
          thread_depth, faces,
          feed_mm_per_sec, min_layer_time, pitch,
-         layer_height);
+         layer_height,
+         machine_limit_x, machine_limit_y, offset_x, offset_y);
 
   printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
   printf("G1 X150 Y10 Z30\n");
@@ -224,6 +244,15 @@ int main(int argc, char *argv[]) {
   double y = start_y + radius;
   printf("G1 F%.1f\n", feed_mm_per_sec * 60);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
+    if (x + radius + thread_depth + 5 > machine_limit_x
+        || y + radius + thread_depth + 5 > machine_limit_y) {
+      fprintf(stderr, "With currently configured bedsize and printhead-offset, "
+              "only %d screws fit.\n"
+              "Configure your machine constraints with -L <x/y> -o < dx,dy> "
+              "(currently -L %.0f,%.0f -o %.0f,%.0f)\n", i,
+              machine_limit_x, machine_limit_y, offset_x, offset_y);
+      break;
+    }
     printf("G1 X%.3f Y%.3f\n", x, y);  // got to center
     double layer_feedrate = 2 * M_PI * radius / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
@@ -238,8 +267,8 @@ int main(int argc, char *argv[]) {
     printf("G1 F%.1f\n", feed_mm_per_sec * 60);
     printf("M83\nG1 E-3 ; retract\nM82\n");
     printf("G1 Z%.3f\n", total_height + 5);
-    x += offset_x + radius;
-    y += offset_y + radius;
+    x += offset_x + 2 * radius + radius_increment;
+    y += offset_y + 2 * radius + radius_increment;
     radius += radius_increment;
   }
 

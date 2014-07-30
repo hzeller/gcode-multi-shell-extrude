@@ -32,8 +32,14 @@ multiple continuous shells are printed on the same printbed in sequence.
              -f <feed-rate>    : maximum, in mm/s
              -T <layer-time>   : min time per layer; dynamically influences -f
              -p <pitch>        : how many mm height a full screw-turn takes
+             -L <x,y>          : x/y size limit of your printbed.
+             -o <dx,dy>        : dx/dy offset per print. Clearance needed from
+                                 hotend-tip to left and front essentially.
 
 GCode-output is on stdout.
+
+Make sure to give the machine limits of your particular machine with the `-L` and
+`-o` option to get the most screws on your bed.
 
 Each shell is extruded separately in a single spiral ('vase'-like) run, so that
 there is no seam between layers. Multiple shells can be printed on the same bed:
@@ -49,7 +55,7 @@ The result are shells that can be screwed into each other
 
 This result was created with this commandline:
 
-    ./multi-shell-extrude -l 0.12 -d 2 -r 10 -R 1.5 -T 4 -n 4 -h 60
+    ./multi-shell-extrude -l 0.12 -d 2 -r 10 -R 1.5 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 > out.gcode
 
 Printed twice with different filaments.
 
