@@ -7,7 +7,8 @@ Printing multiple shells within one print usually means to move the print-head
 between each layer. That means that there are ugly seams between layers.
 
 This program generates GCode so that multiple continuous shells can be
-printed on the same printbed, consecutively.
+printed on the same printbed, consecutively. No extra slicer needed; in fact
+this works so well because there is no extra slicer.
 
 Right now with very simplistic gantry avoidance: print diagonally.
 
@@ -53,5 +54,5 @@ The diagonal collision avoidance is a bit simplistic and might not be enough
 for printers with small build volume. Model the print-head and gantry and configure
 per command-line flags to make a more compact staggered print.
 
-[print]: https://github.com/hzeller/multi-shell-extrude/raw/master/img/print.jpg
-[result]: https://github.com/hzeller/multi-shell-extrude/raw/master/img/result.jpg
+[print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
+[result]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/result.jpg
