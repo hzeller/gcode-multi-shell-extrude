@@ -75,6 +75,8 @@ The diagonal collision avoidance is a bit simplistic and wasting space. Might
 not be enough for printers with small build volume. Model the print-head and
 gantry and configuration to make a more compact staggered print.
 
+Have Fun!
+---------
 ![Multiple Screws from different prints][multiple-prints]
 
 [print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
