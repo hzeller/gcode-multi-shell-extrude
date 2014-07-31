@@ -18,6 +18,12 @@ between each layer; moving the print-head creates visible seams between layers.
 This program generates GCode directly (no extra slicer needed) in a way that
 multiple continuous shells are printed on the same printbed in sequence.
 
+Compile it first
+
+    $ make
+
+Now you can use it; here a little synopsis:
+
     Usage: ./multi-shell-extrude -t <template> [-p <height-per-rotation-mm>]
     Template describes shape. The letters in that string describe the
     screw depth for a full turn.
