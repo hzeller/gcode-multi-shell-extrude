@@ -59,6 +59,7 @@ the needed clearance).
 The result are shells that can be screwed into each other
 
 ![Result][result]
+(Type-A Machine Series 1 2014)
 
 This result was created with this commandline:
 
@@ -78,6 +79,7 @@ gantry and configuration to make a more compact staggered print.
 Have Fun!
 ---------
 ![Multiple Screws from different prints][multiple-prints]
+(Printrbot Simple Metal)
 
 [print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
 [printrbot]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/printrbot.jpg
