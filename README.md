@@ -67,13 +67,14 @@ This result was created with this commandline:
 Printed twice with different filaments.
 
 ![Printrbot][printrbot]
-`./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printr.gcode`
+`./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
 
 TODO
 ----
 The diagonal collision avoidance is a bit simplistic and wasting space. Might
 not be enough for printers with small build volume. Model the print-head and
 gantry and configuration to make a more compact staggered print.
+
 
 [print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
 [printrbot]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/printrbot.jpg
