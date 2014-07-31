@@ -122,6 +122,9 @@ static double CreateExtrusion(PolarFunction *fun, double thread_depth,
 }
 
 int main(int argc, char *argv[]) {
+  const double start_x = 10;
+  const double start_y = 10;
+
   // Some useful default values.
   double pitch = 30.0;
   double layer_height = 0.16;
@@ -132,10 +135,8 @@ int main(int argc, char *argv[]) {
   int faces = 720;
   double radius = 10.0;
   double radius_increment = 1.6;
-  double start_x = 10;
-  double start_y = 10;
-  double offset_x = 45;
-  double offset_y = 45;
+  double head_offset_x = 45;
+  double head_offset_y = 45;
   double feed_mm_per_sec = 100;
   double min_layer_time = 4.5;
   double thread_depth = -1;
@@ -162,7 +163,7 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 'o':
-      if (2 != sscanf(optarg, "%lf,%lf", &offset_x, &offset_y)) {
+      if (2 != sscanf(optarg, "%lf,%lf", &head_offset_x, &head_offset_y)) {
         usage(argv[0]);
       }
       break;
@@ -187,8 +188,6 @@ int main(int argc, char *argv[]) {
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
 
   // Some sensible start pos.
-  start_x = std::max(start_x, radius + thread_depth + 5);
-  start_y = std::max(start_y, radius + thread_depth + 5);
 
   // We want the number of faces in a way, that the error introduced would be
   // less than the layer_height.
@@ -218,7 +217,7 @@ int main(int argc, char *argv[]) {
          thread_depth, faces,
          feed_mm_per_sec, min_layer_time, pitch,
          layer_height,
-         machine_limit_x, machine_limit_y, offset_x, offset_y);
+         machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
 
   printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
   printf("G1 X150 Y10 Z30\n");
@@ -240,8 +239,8 @@ int main(int argc, char *argv[]) {
   // function. That way, we can have few faces without alias problems.
   const double angle_step = (1.0 + (rotation_per_mm * layer_height)) / faces;
   const double height_step = layer_height * angle_step;
-  double x = start_x + radius;
-  double y = start_y + radius;
+  double x = std::max(start_x, radius + thread_depth + 5);
+  double y = std::max(start_y, radius + thread_depth + 5);
   printf("G1 F%.1f\n", feed_mm_per_sec * 60);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
     if (x + radius + thread_depth + 5 > machine_limit_x
@@ -250,7 +249,7 @@ int main(int argc, char *argv[]) {
               "only %d screws fit.\n"
               "Configure your machine constraints with -L <x/y> -o < dx,dy> "
               "(currently -L %.0f,%.0f -o %.0f,%.0f)\n", i,
-              machine_limit_x, machine_limit_y, offset_x, offset_y);
+              machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
       break;
     }
     printf("G1 X%.3f Y%.3f\n", x, y);  // got to center
@@ -267,8 +266,8 @@ int main(int argc, char *argv[]) {
     printf("G1 F%.1f\n", feed_mm_per_sec * 60);
     printf("M83\nG1 E-3 ; retract\nM82\n");
     printf("G1 Z%.3f\n", total_height + 5);
-    x += offset_x + 2 * radius + radius_increment;
-    y += offset_y + 2 * radius + radius_increment;
+    x += head_offset_x + 2 * radius + radius_increment;
+    y += head_offset_y + 2 * radius + radius_increment;
     radius += radius_increment;
   }
 
