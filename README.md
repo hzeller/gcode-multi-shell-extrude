@@ -55,11 +55,11 @@ printhead does not touch the already printed one (Use the `-o` option to configu
 the needed clearance).
 
 ![Print diagonally][print]
+(Type-A Machine Series 1 2014)
 
 The result are shells that can be screwed into each other
 
 ![Result][result]
-(Type-A Machine Series 1 2014)
 
 This result was created with this commandline:
 
@@ -68,6 +68,8 @@ This result was created with this commandline:
 Printed twice with different filaments.
 
 ![Printrbot][printrbot]
+(Printrbot Simple Metal)
+
 `./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
 
 TODO
@@ -79,7 +81,7 @@ gantry and configuration to make a more compact staggered print.
 Have Fun!
 ---------
 ![Multiple Screws from different prints][multiple-prints]
-(Printrbot Simple Metal)
+
 
 [print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
 [printrbot]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/printrbot.jpg
