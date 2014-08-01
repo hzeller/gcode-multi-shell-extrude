@@ -90,14 +90,17 @@ static int usage(const char *progname) {
   return 1;
 }
 
+// 'angle step' is in fraction of a circle, so 0=begin 1.0=full turn.
 // Returns total amount of travel by nozzle.
 static double CreateExtrusion(PolarFunction *fun, double thread_depth,
                               double offset_x, double offset_y, double radius,
-                              double height_step, double total_height,
+                              double layer_height, double total_height,
                               double angle_step, double extrusion_factor) {
   printf("; Screw center X=%.1f Y=%.1f r=%.1f thread-depth=%.1f\n",
          offset_x, offset_y, radius, thread_depth);
+  const double height_step = layer_height * angle_step;
   bool fan_is_on = false;
+  bool do_extrusion = true;
   printf("M106 S0 ; fan off initially\n");
   double angle = 0;
   double last_x = radius, last_y = 0, last_h = 0;
@@ -109,13 +112,24 @@ static double CreateExtrusion(PolarFunction *fun, double thread_depth,
     const double x = r * cos(angle * 2 * M_PI);
     const double y = r * sin(angle * 2 * M_PI);
     total_dist += distance(x - last_x, y - last_y, height - last_h);
-    printf("G1 X%.3f Y%.3f Z%.3f E%.3f\n",
-           x + offset_x, y + offset_y, height,
-           total_dist * extrusion_factor);
+    if (do_extrusion) {
+      printf("G1 X%.3f Y%.3f Z%.3f E%.3f\n", x + offset_x, y + offset_y,
+             height, total_dist * extrusion_factor);
+    } else {
+      printf("G1 X%.3f Y%.3f Z%.3f\n", x + offset_x, y + offset_y, height);
+    }
     last_x = x; last_y = y; last_h = height;
     if (height > 1.5 && !fan_is_on) {
       printf("M106 S255 ; 1.5mm reached - fan on\n");
       fan_is_on = true;
+    }
+    // The last half round, we run without extrusion to have a nice, smooth
+    // ending.
+    if (do_extrusion && (height > total_height - layer_height/2)) {
+      do_extrusion = false;
+      printf("G1 E%.3f ; reaching end of spiral. Retracting 1mm\n"
+             "; final half turn without extrusion.\n",
+             total_dist * extrusion_factor - 1.0);
     }
   }
   return total_dist;
@@ -227,8 +241,11 @@ int main(int argc, char *argv[]) {
   PolarFunction f((unsigned char*) fun_init, rotation_per_mm);
 
   printf("G92 E0  ; nozzle clean extrusion\n");
-  printf("G1 X250 Y10 Z0\nG1 X100 Y10 E%.3f F1000\n",
-         150 /*mm*/ * filament_extrusion_factor);
+  const double test_extrusion_from = 0.8 * machine_limit_x;
+  const double test_extrusion_to = 0.2 * machine_limit_x;
+  printf("G1 X%.1f Y10 Z0\nG1 X%.1f Y10 E%.3f F1000\n",
+         test_extrusion_from, test_extrusion_to,
+         (test_extrusion_from - test_extrusion_to) * filament_extrusion_factor);
   printf("G1 Z5\n");
   printf("M83\nG1 E-3 ; retract\nM82\n");  // relative, retract, absolute
 
@@ -238,7 +255,6 @@ int main(int argc, char *argv[]) {
   // that we are matching up with the start of the new rotation of the polar
   // function. That way, we can have few faces without alias problems.
   const double angle_step = (1.0 + (rotation_per_mm * layer_height)) / faces;
-  const double height_step = layer_height * angle_step;
   double x = std::max(start_x, radius + thread_depth + 5);
   double y = std::max(start_y, radius + thread_depth + 5);
   printf("G1 F%.1f\n", feed_mm_per_sec * 60);  // initial speed.
@@ -255,11 +271,12 @@ int main(int argc, char *argv[]) {
     printf("G1 X%.3f Y%.3f\n", x, y);  // got to center
     double layer_feedrate = 2 * M_PI * radius / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
+    printf("M83\nG1 E2 ; filament back to nozzle tip\nM82\n");
     printf("G92 E0  ; start extrusion\n");
     printf("G1 F%.1f  ; feedrate = %.1fmm/s\n", layer_feedrate * 60,
            layer_feedrate);
     double travel = CreateExtrusion(&f, thread_depth,
-                                    x, y, radius, height_step, total_height,
+                                    x, y, radius, layer_height, total_height,
                                     angle_step, filament_extrusion_factor);
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
