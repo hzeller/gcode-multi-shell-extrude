@@ -81,7 +81,7 @@ static int usage(const char *progname) {
           "\t -n <number-of-screws> : number of screws to be printed\n"
           "\t -r <radius>       : radius of the smallest screw\n"
           "\t -R <radius-increment> : increment between screws\n"
-          "\t -w <twist>        : tWist ratio of angle per radius fraction (0..1)\n"
+          "\t -w <twist>        : tWist ratio of angle per radius fraction (good range: -0.3...0.3)\n"
           "\t -d <thread-depth> : depth of thread (default: radius/5)\n"
           "\t -l <layer-height> : Height of each layer\n"
           "\t -f <feed-rate>    : maximum, in mm/s\n"
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   const double half_segment = sqrt((max_r*max_r)
                                    - (max_r - max_error)*(max_r - max_error));
   faces = ceil((2 * M_PI * max_r) / (2 * half_segment));
-  if (twist > 0.01) {
+  if (fabs(twist) > 0.01) {
     faces *= 4;  // when twisting, we do more
   }
   faces = quantize_up(faces, strlen(fun_init));   // same sampling per letter.
