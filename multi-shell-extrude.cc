@@ -65,20 +65,23 @@ static int usage(const char *progname) {
   fprintf(stderr, "Usage: %s -h <height> [<options>]\n",
           progname);
   fprintf(stderr,
-          "Template describes shape. The letters in that string describe the\n"
-          "screw depth for a full turn.\n"
+          "Template (flag -t) describes the shape. The letters in that string\n"
+          "describe the screw depth for a full turn.\n"
           "A template 'AAZZZAAZZZAAZZZ' is a screw with three parallel threads,"
           "\nwith 'inner parts' (the one with the lower letter 'A') being 2/3\n"
           "the width of the outer parts. 'AAZZZ' would have one thread per turn."
           "\nThe string-length represents a full turn, so 'AAZZZZZZZZ' would\n"
           "have one narrow thread.\n"
-          "The range of letters the depth. Try 'AAZZMMZZZZ'.\n"
+          "The range of letters (here A..Z) is linearly mapped to the depth.\n"
+          "Try 'AAZZMMZZZZ'. If you only use two letters, then 'AABBBAABBB'\n"
+          "is equivalent to 'AAZZZAAZZZ'\n"
           "Required parameter: -h <height>\n\n"
           "\t -t <template>     : template string, described above\n"
           "\t -h <height>       : Total height to be printed\n"
           "\t -n <number-of-screws> : number of screws to be printed\n"
           "\t -r <radius>       : radius of the smallest screw\n"
           "\t -R <radius-increment> : increment between screws\n"
+          "\t -w <twist>        : tWist ratio of angle per radius fraction (0..1)\n"
           "\t -d <thread-depth> : depth of thread (default: radius/5)\n"
           "\t -l <layer-height> : Height of each layer\n"
           "\t -f <feed-rate>    : maximum, in mm/s\n"
@@ -90,15 +93,21 @@ static int usage(const char *progname) {
   return 1;
 }
 
+static double AngleTwist(double twist, double r, double max_r) {
+  return twist * r / max_r;
+}
+
 // 'angle step' is in fraction of a circle, so 0=begin 1.0=full turn.
 // Returns total amount of travel by nozzle.
 static double CreateExtrusion(PolarFunction *fun, double thread_depth,
                               double offset_x, double offset_y, double radius,
+                              double twist,
                               double layer_height, double total_height,
                               double angle_step, double extrusion_factor) {
   printf("; Screw center X=%.1f Y=%.1f r=%.1f thread-depth=%.1f\n",
          offset_x, offset_y, radius, thread_depth);
   const double height_step = layer_height * angle_step;
+  const double max_r = radius + thread_depth;
   bool fan_is_on = false;
   bool do_extrusion = true;
   printf("M106 S0 ; fan off initially\n");
@@ -109,8 +118,8 @@ static double CreateExtrusion(PolarFunction *fun, double thread_depth,
   for (height=0, angle=0; height < total_height;
        height+=height_step, angle+=angle_step) {
     const double r = radius + thread_depth * fun->value(angle, height);
-    const double x = r * cos(angle * 2 * M_PI);
-    const double y = r * sin(angle * 2 * M_PI);
+    const double x = r * cos((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
+    const double y = r * sin((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
     total_dist += distance(x - last_x, y - last_y, height - last_h);
     if (do_extrusion) {
       printf("G1 X%.3f Y%.3f Z%.3f E%.3f\n", x + offset_x, y + offset_y,
@@ -156,11 +165,12 @@ int main(int argc, char *argv[]) {
   double thread_depth = -1;
   double extrusion_fudge_factor = 1.9;  // empiric...
   int screw_count = 2;
+  double twist = 0.0;
 
   const char *fun_init = "AABBBAABBBAABBB";
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
@@ -171,6 +181,7 @@ int main(int argc, char *argv[]) {
     case 'l': layer_height = atof(optarg); break;
     case 'f': feed_mm_per_sec = atof(optarg); break;
     case 'T': min_layer_time = atof(optarg); break;
+    case 'w': twist = atof(optarg); break;
     case 'L':
       if (2 != sscanf(optarg, "%lf,%lf", &machine_limit_x, &machine_limit_y)) {
         usage(argv[0]);
@@ -193,11 +204,6 @@ int main(int argc, char *argv[]) {
   if (thread_depth < 0)
     thread_depth = radius / 5;
 
-  if (thread_depth >= radius) {
-    fprintf(stderr, "Thread-depth larger than radius won't work :)\n");
-    return 1;
-  }
-
   const double filament_extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
 
@@ -214,6 +220,9 @@ int main(int argc, char *argv[]) {
   const double half_segment = sqrt((max_r*max_r)
                                    - (max_r - max_error)*(max_r - max_error));
   faces = ceil((2 * M_PI * max_r) / (2 * half_segment));
+  if (twist > 0.01) {
+    faces *= 4;  // when twisting, we do more
+  }
   faces = quantize_up(faces, strlen(fun_init));   // same sampling per letter.
   printf("; https://github.com/hzeller/gcode-multi-shell-extrude\n");
   printf(";\n; ");
@@ -276,7 +285,8 @@ int main(int argc, char *argv[]) {
     printf("G1 F%.1f  ; feedrate = %.1fmm/s\n", layer_feedrate * 60,
            layer_feedrate);
     double travel = CreateExtrusion(&f, thread_depth,
-                                    x, y, radius, layer_height, total_height,
+                                    x, y, radius, twist,
+                                    layer_height, total_height,
                                     angle_step, filament_extrusion_factor);
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)

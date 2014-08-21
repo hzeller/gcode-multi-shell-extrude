@@ -39,6 +39,7 @@ Now you can use it; here a little synopsis:
              -n <number-of-screws> : number of screws to be printed
              -r <radius>       : radius of the smallest screw
              -R <radius-increment> : increment between screws
+             -w <twist>        : tWist ratio of angle per radius fraction (0..1)
              -d <thread-depth> : depth of thread (default: radius/5)
              -l <layer-height> : Height of each layer
              -f <feed-rate>    : maximum, in mm/s
@@ -77,6 +78,13 @@ Printed twice with different filaments.
 (Printrbot Simple Metal)
 
 `./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
+
+Twist
+-----
+
+The experimental `-w` parameter allows to give things a little twist:
+
+     ./multi-shell-extrude -l 0.12 -p 80 -d 12 -r 10 -R 2 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 -w 0.2 -t ABABABABAB > twist.gcode
 
 TODO
 ----
