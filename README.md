@@ -84,7 +84,7 @@ Twist
 
 The experimental `-w` parameter allows to give things a little twist:
 
-     ./multi-shell-extrude -l 0.12 -p 80 -d 12 -r 10 -R 2 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 -w 0.2 -t ABABABABAB > twist.gcode
+     ./multi-shell-extrude -l 0.12 -p 120 -d 12 -r 10 -R 2 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 -w 0.2 -t ABABABABAB > twist.gcode
 
 TODO
 ----
