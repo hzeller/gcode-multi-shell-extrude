@@ -54,6 +54,7 @@ Now you can use it; here a little synopsis:
          -L <x,y>          : x/y size limit of your printbed.
          -o <dx,dy>        : dx/dy offset per print. Clearance needed from
                              hotend-tip to left and front essentially.
+         -P                : PostScript output instead of GCode output
 
 GCode-output is on stdout.
 
@@ -91,6 +92,22 @@ Twist
 The experimental `-w` parameter allows to give things a little twist:
 
      ./multi-shell-extrude -l 0.12 -p 120 -d 12 -r 10 -R 2 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 -w 0.2 -t ABABABABAB > twist.gcode
+
+PostScript output
+-----------------
+
+While playing with the options, it is nicer to first look at how it would look
+on the printbed. So there is the option `-P` to output postscript instead of
+GCode. If you use a PostScript viewer such as `okular` that re-loads the content
+whenever the file changes, you can play with the options and see how things
+change. The first three layers of the spiral are shown, which gives an
+indication if the filament would stick.
+
+     $ ./multi-shell-extrude -h 5 -P > output.ps
+     $ okular output.ps &    # start postscript viewer
+     # now play around with the options and watch the changes
+     $ ./multi-shell-extrude -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > output.ps
+
 
 TODO
 ----
