@@ -9,9 +9,102 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <vector>
 #include <algorithm>
+
+// Define this with empty, if you're not using gcc.
+#define PRINTF_FMT_CHECK(fmt_pos, args_pos) \
+    __attribute__ ((format (printf, fmt_pos, args_pos)))
+
+static double distance(double dx, double dy, double dz) {
+  return sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+class Printer {
+public:
+  virtual void Preamble(double machine_limit_x, double machine_limit_y,
+                        double feed_mm_per_sec) = 0;
+  virtual void Postamble() = 0;
+  virtual void Comment(const char *fmt, ...) PRINTF_FMT_CHECK(2, 3) = 0;
+  virtual void SetSpeed(double feed_mm_per_sec) = 0;
+  virtual void ResetExtrude() = 0;
+  virtual void Retract(double amount) = 0;
+  virtual void GoZPos(double z) = 0;
+  virtual void MoveTo(double x, double y, double z) = 0;
+  virtual void ExtrudeTo(double x, double y, double z) = 0;
+  virtual void SwitchFan(bool on) = 0;
+  virtual double GetExtrusionLength() = 0;
+};
+
+class GCodePrinter : public Printer {
+public:
+  GCodePrinter(double extrusion_factor)
+    : filament_extrusion_factor_(extrusion_factor), extrude_dist_(0) {}
+
+  virtual void Preamble(double machine_limit_x, double machine_limit_y,
+                        double feed_mm_per_sec) {
+    printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
+    printf("G1 X150 Y10 Z30\n");
+    printf("M109 S190\nM116\n");
+    printf("M82 ; absolute extrusion\n");
+    printf("G92 E0  ; nozzle clean extrusion\n");
+    const double test_extrusion_from = 0.8 * machine_limit_x;
+    const double test_extrusion_to = 0.2 * machine_limit_x;
+    const double length = test_extrusion_from - test_extrusion_to;
+    printf("G1 X%.1f Y10 Z0\nG1 X%.1f Y10 E%.3f F1000\n",
+           test_extrusion_from, test_extrusion_to,
+           length * filament_extrusion_factor_);
+    printf("G1 Z5\n");
+    printf("M83\nG1 E-3 ; retract\nM82\n");  // relative, retract, absolute
+  }
+  virtual void Postamble() {
+    printf("M104 S0\n");
+    printf("M106 S0 ; fan off\n");
+    printf("G28 X0 Y0\n");
+    printf("M84\n");
+  }
+  virtual double GetExtrusionLength() { return extrude_dist_; }
+  virtual void Comment(const char *fmt, ...) {
+    printf("; ");
+    va_list ap; va_start(ap, fmt); vprintf(fmt, ap); va_end(ap);
+  }
+
+  virtual void SetSpeed(double feed_mm_per_sec) {
+    printf("G1 F%.1f  ; feedrate=%.1fmm/s\n", feed_mm_per_sec * 60,
+           feed_mm_per_sec);
+  }
+  virtual void GoZPos(double z) {
+    printf("G1 Z%.3f\n", z);
+  }
+  virtual void MoveTo(double x, double y, double z) {
+    printf("G1 X%.3f Y%.3f Z%.3f\n", x, y, z);
+    last_x = x; last_y = y; last_z = z;
+  }
+  virtual void ExtrudeTo(double x, double y, double z) {
+    extrude_dist_ += distance(x - last_x, y - last_y, z - last_z);
+    printf("G1 X%.3f Y%.3f Z%.3f E%.3f\n", x, y, z,
+           extrude_dist_ * filament_extrusion_factor_);
+    last_x = x; last_y = y; last_z = z;
+  }
+  virtual void ResetExtrude() {
+    printf("M83\nG1 E2 ; filament back to nozzle tip\nM82\n");
+    printf("G92 E0  ; start extrusion\n");
+    extrude_dist_ = 0;
+  }
+  virtual void Retract(double amount) {
+    printf("M83\nG1 E%.1f ; retract\nM82\n", -amount);
+  }
+  virtual void SwitchFan(bool on) {
+    printf("M106 S%d\n", on ? 255 : 0);
+  }
+
+private:
+  const double filament_extrusion_factor_;
+  double last_x, last_y, last_z;
+  double extrude_dist_;
+};
 
 class PolarFunction {
 public:
@@ -52,10 +145,6 @@ private:
   const double rotation_per_mm_;
   std::vector<double> values_;
 };
-
-static double distance(double dx, double dy, double dz) {
-  return sqrt(dx*dx + dy*dy + dz*dz);
-}
 
 static int quantize_up(int x, int q) {
   return q * ((x + q - 1) / q);
@@ -101,50 +190,44 @@ static double AngleTwist(double twist, double r, double max_r) {
 }
 
 // 'angle step' is in fraction of a circle, so 0=begin 1.0=full turn.
-// Returns total amount of travel by nozzle.
-static double CreateExtrusion(PolarFunction *fun, double thread_depth,
-                              double offset_x, double offset_y, double radius,
-                              double twist,
-                              double layer_height, double total_height,
-                              double angle_step, double extrusion_factor) {
-  printf("; Screw center X=%.1f Y=%.1f r=%.1f thread-depth=%.1f\n",
-         offset_x, offset_y, radius, thread_depth);
+static void CreateExtrusion(PolarFunction *fun,
+                            Printer *printer,
+                            double thread_depth,
+                            double offset_x, double offset_y, double radius,
+                            double twist,
+                            double layer_height, double total_height,
+                            double angle_step) {
+  printer->Comment("Screw center X=%.1f Y=%.1f r=%.1f thread-depth=%.1f\n",
+                  offset_x, offset_y, radius, thread_depth);
   const double height_step = layer_height * angle_step;
   const double max_r = radius + thread_depth;
   bool fan_is_on = false;
   bool do_extrusion = true;
-  printf("M106 S0 ; fan off initially\n");
+  printer->SwitchFan(false);
   double angle = 0;
-  double last_x = radius, last_y = 0, last_h = 0;
-  double total_dist = 0;
   double height = 0;
   for (height=0, angle=0; height < total_height;
        height+=height_step, angle+=angle_step) {
     const double r = radius + thread_depth * fun->value(angle, height);
     const double x = r * cos((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
     const double y = r * sin((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
-    total_dist += distance(x - last_x, y - last_y, height - last_h);
-    if (do_extrusion) {
-      printf("G1 X%.3f Y%.3f Z%.3f E%.3f\n", x + offset_x, y + offset_y,
-             height, total_dist * extrusion_factor);
+    if (do_extrusion && height > 0) {
+      printer->ExtrudeTo(x + offset_x, y + offset_y, height);
     } else {
-      printf("G1 X%.3f Y%.3f Z%.3f\n", x + offset_x, y + offset_y, height);
+      printer->MoveTo(x + offset_x, y + offset_y, height);
     }
-    last_x = x; last_y = y; last_h = height;
     if (height > 1.5 && !fan_is_on) {
-      printf("M106 S255 ; 1.5mm reached - fan on\n");
+      printer->SwitchFan(true);  // 1.5mm reached - fan on.
       fan_is_on = true;
     }
     // The last half round, we run without extrusion to have a nice, smooth
     // ending.
     if (do_extrusion && (height > total_height - layer_height/2)) {
       do_extrusion = false;
-      printf("G1 E%.3f ; reaching end of spiral. Retracting 1mm\n"
-             "; final half turn without extrusion.\n",
-             total_dist * extrusion_factor - 1.0);
+      printer->Comment("Reaching end of spiral. Retracting 1mm\n");
+      printer->Retract(1);
     }
   }
-  return total_dist;
 }
 
 int main(int argc, char *argv[]) {
@@ -210,6 +293,8 @@ int main(int argc, char *argv[]) {
   const double filament_extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
 
+  GCodePrinter printer(filament_extrusion_factor);
+
   // Some sensible start pos.
 
   // We want the number of faces in a way, that the error introduced would be
@@ -227,39 +312,30 @@ int main(int argc, char *argv[]) {
     faces *= 4;  // when twisting, we do more
   }
   faces = quantize_up(faces, strlen(fun_init));   // same sampling per letter.
-  printf("; https://github.com/hzeller/gcode-multi-shell-extrude\n");
-  printf(";\n; ");
+  printer.Comment("https://github.com/hzeller/gcode-multi-shell-extrude\n");
+  printer.Comment("\n");
+  printer.Comment("");
   for (int i = 0; i < argc; ++i) printf("%s ", argv[i]);
-  printf("\n;\n");
-  printf("; screw template '%s'\n"
-         "; r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n"
-         "; thread-depth=%.1fmm faces=%d\n"
-         "; feed=%.1fmm/s (maximum; layer time at least %.1f s)\n"
-         "; pitch=%.1fmm/turn layer-height=%.3f\n"
-         "; machine limits: bed: (%.0f/%.0f):  head-offset: (%.0f,%.0f)\n"
-         ";----\n",
-         fun_init,
-         radius, total_height, screw_count, radius_increment,
-         thread_depth, faces,
-         feed_mm_per_sec, min_layer_time, pitch,
-         layer_height,
-         machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
+  printf("\n");
+  printer.Comment("\n");
+  printer.Comment("screw template '%s'\n", fun_init);
+  printer.Comment("r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n",
+                  radius, total_height, screw_count, radius_increment);
+  printer.Comment("thread-depth=%.1fmm faces=%d\n",
+                  thread_depth, faces);
+  printer.Comment("feed=%.1fmm/s (maximum; layer time at least %.1f s)\n",
+                  feed_mm_per_sec, min_layer_time);
+  printer.Comment("pitch=%.1fmm/turn layer-height=%.3f\n", pitch, layer_height);
+  printer.Comment("machine limits: bed: (%.0f/%.0f):  "
+                  "head-offset: (%.0f,%.0f)\n",
+                  machine_limit_x, machine_limit_y,
+                  head_offset_x, head_offset_y);
+  printer.Comment("----\n");
 
-  printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
-  printf("G1 X150 Y10 Z30\n");
-  printf("M109 S190\nM116\n");
-  printf("M82 ; absolute extrusion\n");
+  printer.Preamble(machine_limit_x, machine_limit_y, feed_mm_per_sec);
+
   double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
   PolarFunction f((unsigned char*) fun_init, rotation_per_mm);
-
-  printf("G92 E0  ; nozzle clean extrusion\n");
-  const double test_extrusion_from = 0.8 * machine_limit_x;
-  const double test_extrusion_to = 0.2 * machine_limit_x;
-  printf("G1 X%.1f Y10 Z0\nG1 X%.1f Y10 E%.3f F1000\n",
-         test_extrusion_from, test_extrusion_to,
-         (test_extrusion_from - test_extrusion_to) * filament_extrusion_factor);
-  printf("G1 Z5\n");
-  printf("M83\nG1 E-3 ; retract\nM82\n");  // relative, retract, absolute
 
   double total_time = 0;
   double total_travel = 0;
@@ -269,7 +345,7 @@ int main(int argc, char *argv[]) {
   const double angle_step = (1.0 + (rotation_per_mm * layer_height)) / faces;
   double x = std::max(start_x, radius + thread_depth + 5);
   double y = std::max(start_y, radius + thread_depth + 5);
-  printf("G1 F%.1f\n", feed_mm_per_sec * 60);  // initial speed.
+  printer.SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
     if (x + radius + thread_depth + 5 > machine_limit_x
         || y + radius + thread_depth + 5 > machine_limit_y) {
@@ -280,31 +356,26 @@ int main(int argc, char *argv[]) {
               machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
       break;
     }
-    printf("G1 X%.3f Y%.3f\n", x, y);  // got to center
+    printer.MoveTo(x, y, 0);
     double layer_feedrate = 2 * M_PI * radius / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
-    printf("M83\nG1 E2 ; filament back to nozzle tip\nM82\n");
-    printf("G92 E0  ; start extrusion\n");
-    printf("G1 F%.1f  ; feedrate = %.1fmm/s\n", layer_feedrate * 60,
-           layer_feedrate);
-    double travel = CreateExtrusion(&f, thread_depth,
-                                    x, y, radius, twist,
-                                    layer_height, total_height,
-                                    angle_step, filament_extrusion_factor);
+    printer.ResetExtrude();
+    printer.SetSpeed(layer_feedrate);
+    CreateExtrusion(&f, &printer, thread_depth, x, y, radius, twist,
+                    layer_height, total_height, angle_step);
+    double travel = printer.GetExtrusionLength();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
-    printf("G1 F%.1f\n", feed_mm_per_sec * 60);
-    printf("M83\nG1 E-3 ; retract\nM82\n");
-    printf("G1 Z%.3f\n", total_height + 5);
+    printer.SetSpeed(feed_mm_per_sec);
+    printer.Retract(3);
+    printer.GoZPos(total_height + 5);
     x += head_offset_x + 2 * radius + radius_increment;
     y += head_offset_y + 2 * radius + radius_increment;
     radius += radius_increment;
   }
 
-  printf("M104 S0\nM84\n");
-  printf("M106 S0 ; fan off\n");
-  printf("G1 Z%.3f\n", total_height + 5);
-  printf("G28 X0 Y0\n");
+  printer.GoZPos(total_height + 5);
+  printer.Postamble();
   fprintf(stderr, "Total time about %.0f seconds; %.2fm filament\n",
           total_time, total_travel * filament_extrusion_factor / 1000);
 }
