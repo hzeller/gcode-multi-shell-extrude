@@ -106,6 +106,38 @@ private:
   double extrude_dist_;
 };
 
+class PostScriptPrinter : public Printer {
+public:
+  PostScriptPrinter() {}
+  virtual void Preamble(double machine_limit_x, double machine_limit_y,
+                        double feed_mm_per_sec) {
+    const float mm_to_point = 1 / 25.4 * 72.0;
+    printf("%%!PS-Adobe-3.0\n%%%%BoundingBox: 0 0 %.0f %.0f\n\n",
+           machine_limit_x * mm_to_point, machine_limit_y * mm_to_point);
+    printf("72.0 25.4 div dup scale  %% Switch to mm\n");
+    printf("0.2 setlinewidth %% mm\n");
+  }
+  virtual void Postamble() {
+    printf("stroke\nshowpage\n");
+  }
+  virtual void Comment(const char *fmt, ...) {
+    printf("%% ");
+    va_list ap; va_start(ap, fmt); vprintf(fmt, ap); va_end(ap);
+  }
+  virtual void SetSpeed(double feed_mm_per_sec) {}
+  virtual void ResetExtrude() { }
+  virtual void Retract(double amount) {}
+  virtual void GoZPos(double z) {}
+  virtual void MoveTo(double x, double y, double z) {
+    printf("%.1f %.1f moveto\n", x, y);
+  }
+  virtual void ExtrudeTo(double x, double y, double z) {
+    printf("%.1f %.1f lineto\n", x, y);
+  }
+  virtual void SwitchFan(bool on) {}
+  virtual double GetExtrusionLength() { return 0; }
+};
+
 class PolarFunction {
 public:
   // Initialization string corresponds to the linear rolled out
@@ -181,7 +213,8 @@ static int usage(const char *progname) {
           "\t -p <pitch>        : how many mm height a full screw-turn takes\n"
           "\t -L <x,y>          : x/y size limit of your printbed.\n"
           "\t -o <dx,dy>        : dx/dy offset per print. Clearance needed from\n"
-          "\t                     hotend-tip to left and front essentially.\n");
+          "\t                     hotend-tip to left and front essentially.\n"
+          "\t -P                : PostScript output instead of GCode output\n");
   return 1;
 }
 
@@ -252,11 +285,12 @@ int main(int argc, char *argv[]) {
   double extrusion_fudge_factor = 1.9;  // empiric...
   int screw_count = 2;
   double twist = 0.0;
+  bool do_postscript = false;
 
   const char *fun_init = "AABBBAABBBAABBB";
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:P")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
@@ -279,6 +313,7 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 'p': pitch = atof(optarg); break;
+    case 'P': do_postscript = true; break;
     default:
       return usage(argv[0]);
     }
@@ -293,7 +328,14 @@ int main(int argc, char *argv[]) {
   const double filament_extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
 
-  GCodePrinter printer(filament_extrusion_factor);
+  Printer *printer = NULL;
+  if (do_postscript) {
+    total_height = 3 * layer_height;  // not needed more.
+    printer = new PostScriptPrinter();
+  } else {
+    printer = new GCodePrinter(filament_extrusion_factor);
+  }
+  printer->Preamble(machine_limit_x, machine_limit_y, feed_mm_per_sec);
 
   // Some sensible start pos.
 
@@ -312,27 +354,25 @@ int main(int argc, char *argv[]) {
     faces *= 4;  // when twisting, we do more
   }
   faces = quantize_up(faces, strlen(fun_init));   // same sampling per letter.
-  printer.Comment("https://github.com/hzeller/gcode-multi-shell-extrude\n");
-  printer.Comment("\n");
-  printer.Comment("");
+  printer->Comment("https://github.com/hzeller/gcode-multi-shell-extrude\n");
+  printer->Comment("\n");
+  printer->Comment(" ");
   for (int i = 0; i < argc; ++i) printf("%s ", argv[i]);
   printf("\n");
-  printer.Comment("\n");
-  printer.Comment("screw template '%s'\n", fun_init);
-  printer.Comment("r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n",
+  printer->Comment("\n");
+  printer->Comment("screw template '%s'\n", fun_init);
+  printer->Comment("r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n",
                   radius, total_height, screw_count, radius_increment);
-  printer.Comment("thread-depth=%.1fmm faces=%d\n",
+  printer->Comment("thread-depth=%.1fmm faces=%d\n",
                   thread_depth, faces);
-  printer.Comment("feed=%.1fmm/s (maximum; layer time at least %.1f s)\n",
+  printer->Comment("feed=%.1fmm/s (maximum; layer time at least %.1f s)\n",
                   feed_mm_per_sec, min_layer_time);
-  printer.Comment("pitch=%.1fmm/turn layer-height=%.3f\n", pitch, layer_height);
-  printer.Comment("machine limits: bed: (%.0f/%.0f):  "
+  printer->Comment("pitch=%.1fmm/turn layer-height=%.3f\n", pitch, layer_height);
+  printer->Comment("machine limits: bed: (%.0f/%.0f):  "
                   "head-offset: (%.0f,%.0f)\n",
                   machine_limit_x, machine_limit_y,
                   head_offset_x, head_offset_y);
-  printer.Comment("----\n");
-
-  printer.Preamble(machine_limit_x, machine_limit_y, feed_mm_per_sec);
+  printer->Comment("----\n");
 
   double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
   PolarFunction f((unsigned char*) fun_init, rotation_per_mm);
@@ -345,7 +385,7 @@ int main(int argc, char *argv[]) {
   const double angle_step = (1.0 + (rotation_per_mm * layer_height)) / faces;
   double x = std::max(start_x, radius + thread_depth + 5);
   double y = std::max(start_y, radius + thread_depth + 5);
-  printer.SetSpeed(feed_mm_per_sec);  // initial speed.
+  printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
     if (x + radius + thread_depth + 5 > machine_limit_x
         || y + radius + thread_depth + 5 > machine_limit_y) {
@@ -356,26 +396,26 @@ int main(int argc, char *argv[]) {
               machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
       break;
     }
-    printer.MoveTo(x, y, 0);
+    printer->MoveTo(x, y, 0);
     double layer_feedrate = 2 * M_PI * radius / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
-    printer.ResetExtrude();
-    printer.SetSpeed(layer_feedrate);
-    CreateExtrusion(&f, &printer, thread_depth, x, y, radius, twist,
+    printer->ResetExtrude();
+    printer->SetSpeed(layer_feedrate);
+    CreateExtrusion(&f, printer, thread_depth, x, y, radius, twist,
                     layer_height, total_height, angle_step);
-    double travel = printer.GetExtrusionLength();
+    double travel = printer->GetExtrusionLength();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
-    printer.SetSpeed(feed_mm_per_sec);
-    printer.Retract(3);
-    printer.GoZPos(total_height + 5);
+    printer->SetSpeed(feed_mm_per_sec);
+    printer->Retract(3);
+    printer->GoZPos(total_height + 5);
     x += head_offset_x + 2 * radius + radius_increment;
     y += head_offset_y + 2 * radius + radius_increment;
     radius += radius_increment;
   }
 
-  printer.GoZPos(total_height + 5);
-  printer.Postamble();
+  printer->GoZPos(total_height + 5);
+  printer->Postamble();
   fprintf(stderr, "Total time about %.0f seconds; %.2fm filament\n",
           total_time, total_travel * filament_extrusion_factor / 1000);
 }
