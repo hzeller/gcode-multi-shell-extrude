@@ -239,9 +239,10 @@ Polygon ReadPolygon(const char *filename, double factor) {
     fprintf(stderr, "Can't open %s\n", filename);
     return polygon;
   }
-  while (!feof(in)) {
+  char buffer[256];
+  while (fgets(buffer, sizeof(buffer), in)) {
     Point p;
-    if (fscanf(in, "%lf %lf\n", &p.x, &p.y) == 2) {
+    if (sscanf(buffer, "%lf %lf\n", &p.x, &p.y) == 2) {
       p.x *= factor;
       p.y *= factor;
       polygon.push_back(p);
@@ -373,11 +374,7 @@ int main(int argc, char *argv[]) {
 
   double total_time = 0;
   double total_travel = 0;
-  // We want to overshoot with the number of faces one rotation a bit so
-  // that we are matching up with the start of the new rotation of the polar
-  // function. That way, we can have few faces without alias problems.
 
-  // TODO: figure out space needed by polygon.
   Polygon polygon = data_file
     ? ReadPolygon(data_file, initial_size)
     : RotationalPolygon(fun_init, initial_size, thread_depth, twist);
