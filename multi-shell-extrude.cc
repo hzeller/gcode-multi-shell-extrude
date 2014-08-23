@@ -6,19 +6,17 @@
 #include <assert.h>
 #include <getopt.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
-#include <vector>
 #include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
-struct Point {
-  Point(double xx, double yy) : x(xx), y(yy){}
-  double x, y;
-};
-typedef std::vector<Point> Polygon;
+#include "multi-shell-extrude.h"
 
 // Define this with empty, if you're not using gcc.
 #define PRINTF_FMT_CHECK(fmt_pos, args_pos) \
@@ -162,6 +160,7 @@ static int usage(const char *progname) {
           "Required parameter: -h <height>\n\n"
           "\t -t <template>     : template string, described above\n"
           "\t                     (default \"AABBBAABBBAABBB\")\n"
+          "\t -D <data>         : data file with polygon\n"
           "\t -h <height>       : Total height to be printed\n"
           "\t -n <number-of-screws> : number of screws to be printed\n"
           "\t -r <radius>       : radius of the smallest screw\n"
@@ -202,7 +201,7 @@ static void CreateExtrusion(const Polygon &p,
                             double rotation_per_mm) {
   printer->Comment("Screw center X=%.1f Y=%.1f\n", offset_x, offset_y);
   const double polygon_len = CalcPolygonLen(p);
-  const double rotation_per_layer = layer_height * rotation_per_mm;
+  const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
   printer->SwitchFan(false);
   double height = 0;
@@ -219,7 +218,7 @@ static void CreateExtrusion(const Polygon &p,
         run_len += distance(p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0);
       }
       double fraction = run_len / polygon_len;
-      double a = angle + fraction * rotation_per_layer * 2 * M_PI;
+      double a = angle + fraction * rotation_per_layer;
       double x = p[i].x * cos(a) - p[i].y * sin(a);
       double y = p[i].y * cos(a) + p[i].x * sin(a);
       printer->ExtrudeTo(x + offset_x,
@@ -233,17 +232,24 @@ static void CreateExtrusion(const Polygon &p,
   }
 }
 
-Polygon CreatePolygon(double twist) {
-  Polygon p;
-  p.push_back(Point(10, 10));
-  p.push_back(Point(-10, 10));
-  p.push_back(Point(-10, -10));
-  p.push_back(Point(10, -10));
-  return p;
+Polygon ReadPolygon(const char *filename) {
+  Polygon polygon;
+  FILE *in = fopen(filename, "r");
+  if (!in) {
+    fprintf(stderr, "Can't open %s\n", filename);
+    return polygon;
+  }
+  while (!feof(in)) {
+    Point p;
+    if (fscanf(in, "%lf %lf\n", &p.x, &p.y) == 2)
+      polygon.push_back(p);
+  }
+  fclose(in);
+  return polygon;
 }
 
-// Very crude first implementation to get things going. Only works for Convex
-// polygons.
+// Very crude first implementation to get things going. Only works for convex
+// polygons somewhat correctly.
 void PolygonOffset(Polygon *polygon, double offset) {
   for (size_t i = 0; i < polygon->size(); ++i) {
     Point* p = &(*polygon)[i];
@@ -279,11 +285,13 @@ int main(int argc, char *argv[]) {
   bool do_postscript = false;
 
   const char *fun_init = "AABBBAABBBAABBB";
+  const char *data_file = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:P")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:PD:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
+    case 'D': data_file = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
     case 'n': screw_count = atoi(optarg); break;
     case 'r': radius = atof(optarg); break;
@@ -349,7 +357,7 @@ int main(int argc, char *argv[]) {
   printer->Comment("----\n");
 
   // How much the whole system should rotate per mm height.
-  double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
+  const double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
 
   double total_time = 0;
   double total_travel = 0;
@@ -360,7 +368,13 @@ int main(int argc, char *argv[]) {
   double x = std::max(start_x, radius + thread_depth + 5);
   double y = std::max(start_y, radius + thread_depth + 5);
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
-  Polygon p = CreatePolygon(twist);
+  Polygon p = data_file
+    ? ReadPolygon(data_file)
+    : RotationalPolygon(fun_init, radius, thread_depth, twist);
+  if (p.empty()) {
+    fprintf(stderr, "Polygon empty\n");
+    return 1;
+  }
   for (int i = 0; i < screw_count; ++i) {
     if (x + radius + thread_depth + 5 > machine_limit_x
         || y + radius + thread_depth + 5 > machine_limit_y) {
