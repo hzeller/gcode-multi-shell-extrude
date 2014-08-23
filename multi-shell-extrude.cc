@@ -22,10 +22,6 @@
 #define PRINTF_FMT_CHECK(fmt_pos, args_pos) \
     __attribute__ ((format (printf, fmt_pos, args_pos)))
 
-static double distance(double dx, double dy, double dz) {
-  return sqrt(dx*dx + dy*dy + dz*dz);
-}
-
 class Printer {
 public:
   virtual void Preamble(double machine_limit_x, double machine_limit_y,
@@ -261,18 +257,6 @@ double GetRadius(Polygon &polygon) {
   return dist;
 }
 
-// Very crude first implementation to get things going. Only works for convex
-// polygons somewhat correctly.
-void PolygonOffset(Polygon *polygon, double offset) {
-  for (size_t i = 0; i < polygon->size(); ++i) {
-    Point* p = &(*polygon)[i];
-    double from_center = distance(p->x, p->y, 0);
-    double stretch = (from_center + offset) / from_center;
-    p->x *= stretch;
-    p->y *= stretch;
-  }
-}
-
 int main(int argc, char *argv[]) {
   const double start_x = 10;
   const double start_y = 10;
@@ -404,7 +388,7 @@ int main(int argc, char *argv[]) {
     printer->SetSpeed(layer_feedrate);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
-    PolygonOffset(&polygon, shell_increment);
+    polygon = PolygonOffset(polygon, shell_increment);
     double travel = printer->GetExtrusionLength();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)

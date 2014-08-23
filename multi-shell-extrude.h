@@ -6,6 +6,7 @@
 #define MULTI_SHELL_EXTRUDE_H_
 
 #include <vector>
+#include <math.h>
 
 struct Point {
   Point() : x(0), y(0) {}
@@ -14,8 +15,19 @@ struct Point {
 };
 typedef std::vector<Point> Polygon;
 
-// Create a polygon
+// Calculate euclidian distance.
+inline double distance(double dx, double dy, double dz) {
+  return sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+// Create a polygon from a string "fun_init", describing "thread_depth"
+// offsets from an "inner_radius". In rotational-polygon.cc
 Polygon RotationalPolygon(const char *fun_init, double inner_radius,
 			  double thread_depth, double twist);
+
+// Offset an polygon. Minkowski with disk of radius "offset".
+// The actual Minkowski sum would have arc segments, that is flattened as
+// line segments. In polygon-offset.cc
+Polygon PolygonOffset(const Polygon &in, double offset);
 
 #endif  // MULTI_SHELL_EXTRUDE_H_
