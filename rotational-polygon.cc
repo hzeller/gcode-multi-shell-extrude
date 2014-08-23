@@ -69,7 +69,7 @@ Polygon RotationalPolygon(const char *fun_init, double inner_radius,
   int faces = ceil((2 * M_PI * max_r) / (2 * half_segment));
   faces = quantize_up(faces, strlen(fun_init));   // same sampling per letter.
   if (fabs(twist) > 0.05) {
-    faces *= 5;  // when twisting, we do more. TODO: calculate better.
+    faces *= 4;  // when twisting, we do more. TODO: calculate better.
   }
   for (int f = 0; f < faces; ++f) {
     const double angle = 1.0 * f / faces;

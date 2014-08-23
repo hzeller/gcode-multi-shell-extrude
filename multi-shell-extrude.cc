@@ -171,7 +171,12 @@ static int usage(const char *progname) {
           "\t -L <x,y>          : x/y size limit of your printbed.\n"
           "\t -o <dx,dy>        : dx/dy offset per print. Clearance needed from\n"
           "\t                     hotend-tip to left and front essentially.\n"
-          "\t -P                : PostScript output instead of GCode output\n");
+          "\t -P                : PostScript output instead of GCode output\n"
+          "\t -u <pump>         : Pump up polygon as if the center was not a\n"
+          "\t                     dot but a cylinder of <pump> radius\n"
+          "\t -m                : For Postscript: show nested (Matryoshka doll "
+          "style)\n");
+
   return 1;
 }
 
@@ -270,8 +275,8 @@ double GetRadius(const Polygon &polygon) {
 }
 
 int main(int argc, char *argv[]) {
-  const double start_x = 10;
-  const double start_y = 10;
+  const double start_x = 20;
+  const double start_y = 20;
 
   // Some useful default values.
   double pitch = 30.0;
@@ -293,12 +298,13 @@ int main(int argc, char *argv[]) {
   double twist = 0.0;
   double pump = 0.0;
   bool do_postscript = false;
+  bool matryoshka = false;
 
   const char *fun_init = "AABBBAABBBAABBB";
   const char *data_file = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:PD:u:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:PD:u:m")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'D': data_file = strdup(optarg); break;
@@ -312,6 +318,7 @@ int main(int argc, char *argv[]) {
     case 'T': min_layer_time = atof(optarg); break;
     case 'w': twist = atof(optarg); break;
     case 'u': pump = atof(optarg); break;
+    case 'm': matryoshka = true; break;
     case 'L':
       if (2 != sscanf(optarg, "%lf,%lf", &machine_limit_x, &machine_limit_y)) {
         usage(argv[0]);
@@ -334,6 +341,34 @@ int main(int argc, char *argv[]) {
 
   if (thread_depth < 0)
     thread_depth = initial_size / 5;
+
+  if (matryoshka && !do_postscript) {
+    fprintf(stderr, "Matryoshka mode only valid with postscript\n");
+    return usage(argv[0]);
+  }
+
+  matryoshka &= do_postscript;   // Anyway, let's formulate it also this way
+
+  // Get polygon we'll be working on.
+  Polygon polygon = data_file
+    ? ReadPolygon(data_file, initial_size)
+    : RotationalPolygon(fun_init, initial_size, thread_depth, twist);
+
+  if (polygon.empty()) {
+    fprintf(stderr, "Polygon empty\n");
+    return 1;
+  }
+
+  if (pump > 0) {
+    polygon = RadialPumpPolygon(polygon, pump);
+  }
+
+  double radius = GetRadius(polygon);
+
+  if (matryoshka) {
+    machine_limit_x = 2 * radius + 2 * start_x;
+    machine_limit_y = 2 * radius + 2 * start_y;
+  }
 
   const double filament_extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
@@ -373,21 +408,8 @@ int main(int argc, char *argv[]) {
   double total_time = 0;
   double total_travel = 0;
 
-  Polygon polygon = data_file
-    ? ReadPolygon(data_file, initial_size)
-    : RotationalPolygon(fun_init, initial_size, thread_depth, twist);
-  if (polygon.empty()) {
-    fprintf(stderr, "Polygon empty\n");
-    return 1;
-  }
-
-  if (pump > 0) {
-    polygon = RadialPumpPolygon(polygon, pump);
-  }
-
-  double radius = GetRadius(polygon);
-  double x = start_x + radius;
-  double y = start_y + radius;
+  double x = std::max(start_x, radius + 5);
+  double y = std::max(start_y, radius + 5);
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
     if (x + radius + 5 > machine_limit_x
@@ -414,8 +436,10 @@ int main(int argc, char *argv[]) {
     printer->Retract(3);
     printer->GoZPos(total_height + 5);
     double new_radius = GetRadius(polygon);
-    x += head_offset_x + radius + new_radius;
-    y += head_offset_y + radius + new_radius;
+    if (!matryoshka) {
+      x += head_offset_x + radius + new_radius;
+      y += head_offset_y + radius + new_radius;
+    }
     radius = new_radius;
   }
 
