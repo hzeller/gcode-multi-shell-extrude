@@ -232,7 +232,7 @@ static void CreateExtrusion(const Polygon &p,
   }
 }
 
-Polygon ReadPolygon(const char *filename) {
+Polygon ReadPolygon(const char *filename, double factor) {
   Polygon polygon;
   FILE *in = fopen(filename, "r");
   if (!in) {
@@ -241,11 +241,23 @@ Polygon ReadPolygon(const char *filename) {
   }
   while (!feof(in)) {
     Point p;
-    if (fscanf(in, "%lf %lf\n", &p.x, &p.y) == 2)
+    if (fscanf(in, "%lf %lf\n", &p.x, &p.y) == 2) {
+      p.x *= factor;
+      p.y *= factor;
       polygon.push_back(p);
+    }
   }
   fclose(in);
   return polygon;
+}
+
+// Determine radius of circumscribed circle
+double GetRadius(Polygon &polygon) {
+  double dist = -1;
+  for (size_t i = 0; i < polygon.size(); ++i) {
+    dist = std::max(dist, distance(polygon[i].x, polygon[i].y, 0));
+  }
+  return dist;
 }
 
 // Very crude first implementation to get things going. Only works for convex
@@ -272,8 +284,8 @@ int main(int argc, char *argv[]) {
   double total_height = -1;
   double machine_limit_x = 150, machine_limit_y = 150;
   int faces = 720;
-  double radius = 10.0;
-  double radius_increment = 1.6;
+  double initial_size = 10.0;
+  double shell_increment = 1.6;
   double head_offset_x = 45;
   double head_offset_y = 45;
   double feed_mm_per_sec = 100;
@@ -294,8 +306,8 @@ int main(int argc, char *argv[]) {
     case 'D': data_file = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
     case 'n': screw_count = atoi(optarg); break;
-    case 'r': radius = atof(optarg); break;
-    case 'R': radius_increment = atof(optarg); break;
+    case 'r': initial_size = atof(optarg); break;
+    case 'R': shell_increment = atof(optarg); break;
     case 'd': thread_depth = atof(optarg); break;
     case 'l': layer_height = atof(optarg); break;
     case 'f': feed_mm_per_sec = atof(optarg); break;
@@ -322,7 +334,7 @@ int main(int argc, char *argv[]) {
     return usage(argv[0]);
 
   if (thread_depth < 0)
-    thread_depth = radius / 5;
+    thread_depth = initial_size / 5;
 
   const double filament_extrusion_factor = extrusion_fudge_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
@@ -343,8 +355,8 @@ int main(int argc, char *argv[]) {
   printf("\n");
   printer->Comment("\n");
   printer->Comment("screw template '%s'\n", fun_init);
-  printer->Comment("r=%.1fmm h=%.1fmm n=%d (radius-increment=%.1fmm)\n",
-                  radius, total_height, screw_count, radius_increment);
+  printer->Comment("size=%.1fmm h=%.1fmm n=%d (shell-increment=%.1fmm)\n",
+                   initial_size, total_height, screw_count, shell_increment);
   printer->Comment("thread-depth=%.1fmm faces=%d\n",
                   thread_depth, faces);
   printer->Comment("feed=%.1fmm/s (maximum; layer time at least %.1f s)\n",
@@ -365,19 +377,22 @@ int main(int argc, char *argv[]) {
   // that we are matching up with the start of the new rotation of the polar
   // function. That way, we can have few faces without alias problems.
 
-  double x = std::max(start_x, radius + thread_depth + 5);
-  double y = std::max(start_y, radius + thread_depth + 5);
-  printer->SetSpeed(feed_mm_per_sec);  // initial speed.
-  Polygon p = data_file
-    ? ReadPolygon(data_file)
-    : RotationalPolygon(fun_init, radius, thread_depth, twist);
-  if (p.empty()) {
+  // TODO: figure out space needed by polygon.
+  Polygon polygon = data_file
+    ? ReadPolygon(data_file, initial_size)
+    : RotationalPolygon(fun_init, initial_size, thread_depth, twist);
+  if (polygon.empty()) {
     fprintf(stderr, "Polygon empty\n");
     return 1;
   }
+
+  double radius = GetRadius(polygon);
+  double x = start_x + radius;
+  double y = start_y + radius;
+  printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
-    if (x + radius + thread_depth + 5 > machine_limit_x
-        || y + radius + thread_depth + 5 > machine_limit_y) {
+    if (x + radius + 5 > machine_limit_x
+        || y + radius + 5 > machine_limit_y) {
       fprintf(stderr, "With currently configured bedsize and printhead-offset, "
               "only %d screws fit.\n"
               "Configure your machine constraints with -L <x/y> -o < dx,dy> "
@@ -386,13 +401,13 @@ int main(int argc, char *argv[]) {
       break;
     }
     printer->MoveTo(x, y, 0);
-    double layer_feedrate = CalcPolygonLen(p) / min_layer_time;
+    double layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
-    CreateExtrusion(p, printer, x, y, layer_height, total_height,
+    CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
-    PolygonOffset(&p, radius_increment);
+    PolygonOffset(&polygon, shell_increment);
     double travel = printer->GetExtrusionLength();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
@@ -400,9 +415,9 @@ int main(int argc, char *argv[]) {
     printer->Retract(3);
     printer->GoZPos(total_height + 5);
     // TODO: determine x/y size of polygon here.
-    x += head_offset_x + 2 * radius + radius_increment;
-    y += head_offset_y + 2 * radius + radius_increment;
-    radius += radius_increment;
+    x += head_offset_x + 2 * radius + shell_increment;
+    y += head_offset_y + 2 * radius + shell_increment;
+    radius += shell_increment;
   }
 
   printer->Postamble();
