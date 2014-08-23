@@ -18,6 +18,8 @@ typedef CGAL::Straight_skeleton_2<CG_K> CG_Ss ;
 typedef boost::shared_ptr<CG_Polygon_2> CG_PolygonPtr ;
 typedef std::vector<CG_PolygonPtr> CG_PolygonVector;
 
+// Essentially Minkowsky, but simplified using skeletons
+// http://doc.cgal.org/latest/Straight_skeleton_2/index.html
 Polygon PolygonOffset(const Polygon &polygon, double offset) {
   CG_Polygon_2 cg_poly;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
@@ -32,6 +34,8 @@ Polygon PolygonOffset(const Polygon &polygon, double offset) {
   
   Polygon result;
   CG_Polygon_2 &cg_out_poly = *cg_outer[1];  // [0] contains bounding box (?)
+  // For some reason, the resulting polygon turns around right; to get a left
+  // turning polygon, reverse it.
   for (int i = (int)cg_out_poly.size() - 1; i >= 0; --i) {
     result.push_back(Point(cg_out_poly[i].x(), cg_out_poly[i].y()));
   }

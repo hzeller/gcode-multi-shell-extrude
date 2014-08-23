@@ -248,8 +248,20 @@ Polygon ReadPolygon(const char *filename, double factor) {
   return polygon;
 }
 
+// Pump a polygon as if it was not arranged a dot but a circle of radius pump_r
+Polygon RadialPumpPolygon(const Polygon& polygon, double pump_r) {
+  Polygon result;
+  for (std::size_t i = 0; i < polygon.size(); ++i) {
+    const Point &p = polygon[i];
+    double from_center = distance(p.x, p.y, 0);
+    double stretch = (from_center + pump_r) / from_center;
+    result.push_back(Point(p.x * stretch, p.y * stretch));
+  }
+  return result;
+}
+
 // Determine radius of circumscribed circle
-double GetRadius(Polygon &polygon) {
+double GetRadius(const Polygon &polygon) {
   double dist = -1;
   for (size_t i = 0; i < polygon.size(); ++i) {
     dist = std::max(dist, distance(polygon[i].x, polygon[i].y, 0));
@@ -279,13 +291,14 @@ int main(int argc, char *argv[]) {
   double extrusion_fudge_factor = 1.9;  // empiric...
   int screw_count = 2;
   double twist = 0.0;
+  double pump = 0.0;
   bool do_postscript = false;
 
   const char *fun_init = "AABBBAABBBAABBB";
   const char *data_file = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:PD:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:PD:u:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'D': data_file = strdup(optarg); break;
@@ -298,6 +311,7 @@ int main(int argc, char *argv[]) {
     case 'f': feed_mm_per_sec = atof(optarg); break;
     case 'T': min_layer_time = atof(optarg); break;
     case 'w': twist = atof(optarg); break;
+    case 'u': pump = atof(optarg); break;
     case 'L':
       if (2 != sscanf(optarg, "%lf,%lf", &machine_limit_x, &machine_limit_y)) {
         usage(argv[0]);
@@ -367,6 +381,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  if (pump > 0) {
+    polygon = RadialPumpPolygon(polygon, pump);
+  }
+
   double radius = GetRadius(polygon);
   double x = start_x + radius;
   double y = start_y + radius;
@@ -395,10 +413,10 @@ int main(int argc, char *argv[]) {
     printer->SetSpeed(feed_mm_per_sec);
     printer->Retract(3);
     printer->GoZPos(total_height + 5);
-    // TODO: determine x/y size of polygon here.
-    x += head_offset_x + 2 * radius + shell_increment;
-    y += head_offset_y + 2 * radius + shell_increment;
-    radius += shell_increment;
+    double new_radius = GetRadius(polygon);
+    x += head_offset_x + radius + new_radius;
+    y += head_offset_y + radius + new_radius;
+    radius = new_radius;
   }
 
   printer->Postamble();
