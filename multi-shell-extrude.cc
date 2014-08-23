@@ -421,7 +421,7 @@ int main(int argc, char *argv[]) {
               machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
       break;
     }
-    printer->MoveTo(x, y, 0);
+    printer->MoveTo(x, y, i > 0 ? total_height + 5 : 5);
     double layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printer->ResetExtrude();
