@@ -14,6 +14,12 @@
 #include <vector>
 #include <algorithm>
 
+struct Point {
+  Point(double xx, double yy) : x(xx), y(yy){}
+  double x, y;
+};
+typedef std::vector<Point> Polygon;
+
 // Define this with empty, if you're not using gcc.
 #define PRINTF_FMT_CHECK(fmt_pos, args_pos) \
     __attribute__ ((format (printf, fmt_pos, args_pos)))
@@ -60,7 +66,7 @@ public:
     printf("M83\nG1 E-3 ; retract\nM82\n");  // relative, retract, absolute
   }
   virtual void Postamble() {
-    printf("M104 S0\n");
+    printf("M104 S0 ; hotend off\n");
     printf("M106 S0 ; fan off\n");
     printf("G28 X0 Y0\n");
     printf("M84\n");
@@ -138,50 +144,6 @@ public:
   virtual double GetExtrusionLength() { return 0; }
 };
 
-class PolarFunction {
-public:
-  // Initialization string corresponds to the linear rolled out
-  // circumreference 'dents'.
-  PolarFunction(const unsigned char *init, double rotation_per_mm)
-    : rotation_per_mm_(rotation_per_mm) {
-    int min = 0x100;
-    int max = -1;
-    for (const unsigned char *s = init; *s; ++s) {
-      if (*s < min) min = *s;
-      if (*s > max) max = *s;
-    }
-    double range = max - min;
-    for (const unsigned char *s = init; *s; ++s) {
-      if (range > 0)
-        values_.push_back((*s - min) / range);
-      else
-        values_.push_back(0);
-    }
-  }
-
-  // phi is fraction of 2PI, i.e. 0 = start, 1 = one turn.
-  double value(double phi, double height_mm) {
-    // We want screws to turn right, hence we substract
-    phi = fmodl(phi - rotation_per_mm_ * height_mm, 1.0);
-    assert(phi >= 0);
-    const int n = phi * values_.size();
-    // linear interpolation between this and the next value.
-    const double a = values_[n];
-    const double b = values_[(n+1) % values_.size()];
-    // fraction between values.
-    const double fraction = values_.size() * fmodl(phi, 1.0 / values_.size());
-    return a + (b - a) * fraction;
-  }
-
-private:
-  const double rotation_per_mm_;
-  std::vector<double> values_;
-};
-
-static int quantize_up(int x, int q) {
-  return q * ((x + q - 1) / q);
-}
-
 static int usage(const char *progname) {
   fprintf(stderr, "Usage: %s -h <height> [<options>]\n",
           progname);
@@ -218,48 +180,77 @@ static int usage(const char *progname) {
   return 1;
 }
 
-static double AngleTwist(double twist, double r, double max_r) {
-  return twist * r / max_r;
+// The total length of distance going through a polygon.
+double CalcPolygonLen(const Polygon &polygon) {
+  double len = 0;
+  const int size = polygon.size();
+  for (int i = 1; i < size; ++i) {
+    len += distance(polygon[i].x - polygon[i-1].x,
+                    polygon[i].y - polygon[i-1].y, 0);
+  }
+  // Back to the beginning.
+  len += distance(polygon[size-1].x - polygon[0].x,
+                  polygon[size-1].y - polygon[0].y, 0);
+  return len;
 }
 
-// 'angle step' is in fraction of a circle, so 0=begin 1.0=full turn.
-static void CreateExtrusion(PolarFunction *fun,
+// Requires: Polygon with centroid on (0,0)
+static void CreateExtrusion(const Polygon &p,
                             Printer *printer,
-                            double thread_depth,
-                            double offset_x, double offset_y, double radius,
-                            double twist,
+                            double offset_x, double offset_y,
                             double layer_height, double total_height,
-                            double angle_step) {
-  printer->Comment("Screw center X=%.1f Y=%.1f r=%.1f thread-depth=%.1f\n",
-                  offset_x, offset_y, radius, thread_depth);
-  const double height_step = layer_height * angle_step;
-  const double max_r = radius + thread_depth;
+                            double rotation_per_mm) {
+  printer->Comment("Screw center X=%.1f Y=%.1f\n", offset_x, offset_y);
+  const double polygon_len = CalcPolygonLen(p);
+  const double rotation_per_layer = layer_height * rotation_per_mm;
   bool fan_is_on = false;
-  bool do_extrusion = true;
   printer->SwitchFan(false);
-  double angle = 0;
   double height = 0;
-  for (height=0, angle=0; height < total_height;
-       height+=height_step, angle+=angle_step) {
-    const double r = radius + thread_depth * fun->value(angle, height);
-    const double x = r * cos((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
-    const double y = r * sin((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
-    if (do_extrusion && height > 0) {
-      printer->ExtrudeTo(x + offset_x, y + offset_y, height);
-    } else {
-      printer->MoveTo(x + offset_x, y + offset_y, height);
+  double angle = 0;
+  double run_len = 0;
+  const int psteps = p.size();
+  printer->MoveTo(p[0].x + offset_x, p[0].y + offset_y, 0);
+  for (height = 0, angle=0; height < total_height;
+       height += layer_height, angle += rotation_per_layer) {
+    for (int i = 0; i < psteps; ++i) {
+      if (i == 0) {
+        run_len = 0;
+      } else {
+        run_len += distance(p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0);
+      }
+      double fraction = run_len / polygon_len;
+      double a = angle + fraction * rotation_per_layer * 2 * M_PI;
+      double x = p[i].x * cos(a) - p[i].y * sin(a);
+      double y = p[i].y * cos(a) + p[i].x * sin(a);
+      printer->ExtrudeTo(x + offset_x,
+                         y + offset_y, height + layer_height * fraction);
     }
+
     if (height > 1.5 && !fan_is_on) {
       printer->SwitchFan(true);  // 1.5mm reached - fan on.
       fan_is_on = true;
     }
-    // The last half round, we run without extrusion to have a nice, smooth
-    // ending.
-    if (do_extrusion && (height > total_height - layer_height/2)) {
-      do_extrusion = false;
-      printer->Comment("Reaching end of spiral. Retracting 1mm\n");
-      printer->Retract(1);
-    }
+  }
+}
+
+Polygon CreatePolygon(double twist) {
+  Polygon p;
+  p.push_back(Point(10, 10));
+  p.push_back(Point(-10, 10));
+  p.push_back(Point(-10, -10));
+  p.push_back(Point(10, -10));
+  return p;
+}
+
+// Very crude first implementation to get things going. Only works for Convex
+// polygons.
+void PolygonOffset(Polygon *polygon, double offset) {
+  for (size_t i = 0; i < polygon->size(); ++i) {
+    Point* p = &(*polygon)[i];
+    double from_center = distance(p->x, p->y, 0);
+    double stretch = (from_center + offset) / from_center;
+    p->x *= stretch;
+    p->y *= stretch;
   }
 }
 
@@ -337,23 +328,6 @@ int main(int argc, char *argv[]) {
   }
   printer->Preamble(machine_limit_x, machine_limit_y, feed_mm_per_sec);
 
-  // Some sensible start pos.
-
-  // We want the number of faces in a way, that the error introduced would be
-  // less than the layer_height.
-  // max_r is the maxium radius we'll see on the biggest shell
-  const double max_r = radius + (screw_count-1) * radius_increment + thread_depth;
-  const double max_error = layer_height/2;  // maximum error to tolerate
-  // Maximum lenght of one edge of our cylinder, that should not differ more
-  // than max_error in the middle. Half a segment is a nice perpendicular
-  // triangle
-  const double half_segment = sqrt((max_r*max_r)
-                                   - (max_r - max_error)*(max_r - max_error));
-  faces = ceil((2 * M_PI * max_r) / (2 * half_segment));
-  if (fabs(twist) > 0.01) {
-    faces *= 4;  // when twisting, we do more
-  }
-  faces = quantize_up(faces, strlen(fun_init));   // same sampling per letter.
   printer->Comment("https://github.com/hzeller/gcode-multi-shell-extrude\n");
   printer->Comment("\n");
   printer->Comment(" ");
@@ -374,18 +348,19 @@ int main(int argc, char *argv[]) {
                   head_offset_x, head_offset_y);
   printer->Comment("----\n");
 
+  // How much the whole system should rotate per mm height.
   double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
-  PolarFunction f((unsigned char*) fun_init, rotation_per_mm);
 
   double total_time = 0;
   double total_travel = 0;
   // We want to overshoot with the number of faces one rotation a bit so
   // that we are matching up with the start of the new rotation of the polar
   // function. That way, we can have few faces without alias problems.
-  const double angle_step = (1.0 + (rotation_per_mm * layer_height)) / faces;
+
   double x = std::max(start_x, radius + thread_depth + 5);
   double y = std::max(start_y, radius + thread_depth + 5);
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
+  Polygon p = CreatePolygon(twist);
   for (int i = 0; i < screw_count; ++i) {
     if (x + radius + thread_depth + 5 > machine_limit_x
         || y + radius + thread_depth + 5 > machine_limit_y) {
@@ -397,24 +372,25 @@ int main(int argc, char *argv[]) {
       break;
     }
     printer->MoveTo(x, y, 0);
-    double layer_feedrate = 2 * M_PI * radius / min_layer_time;
+    double layer_feedrate = CalcPolygonLen(p) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
-    CreateExtrusion(&f, printer, thread_depth, x, y, radius, twist,
-                    layer_height, total_height, angle_step);
+    CreateExtrusion(p, printer, x, y, layer_height, total_height,
+                    rotation_per_mm);
+    PolygonOffset(&p, radius_increment);
     double travel = printer->GetExtrusionLength();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
     printer->SetSpeed(feed_mm_per_sec);
     printer->Retract(3);
     printer->GoZPos(total_height + 5);
+    // TODO: determine x/y size of polygon here.
     x += head_offset_x + 2 * radius + radius_increment;
     y += head_offset_y + 2 * radius + radius_increment;
     radius += radius_increment;
   }
 
-  printer->GoZPos(total_height + 5);
   printer->Postamble();
   fprintf(stderr, "Total time about %.0f seconds; %.2fm filament\n",
           total_time, total_travel * filament_extrusion_factor / 1000);
