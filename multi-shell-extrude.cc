@@ -35,15 +35,16 @@ public:
   virtual void Comment(const char *fmt, ...) PRINTF_FMT_CHECK(2, 3) = 0;
   virtual void SetSpeed(double feed_mm_per_sec) = 0;
   virtual void ResetExtrude() = 0;
-  virtual void Retract(double amount) = 0;
+  virtual void Retract() = 0;
   virtual void GoZPos(double z) = 0;
   virtual void MoveTo(double x, double y, double z) = 0;
   virtual void ExtrudeTo(double x, double y, double z) = 0;
   virtual void SwitchFan(bool on) = 0;
-  virtual double GetExtrusionLength() = 0;
+  virtual double GetExtrusionDistance() = 0;
 };
 
 class GCodePrinter : public Printer {
+  static const double kRetractAmount = 2;
 public:
   GCodePrinter(double extrusion_factor)
     : filament_extrusion_factor_(extrusion_factor), extrude_dist_(0) {}
@@ -75,7 +76,7 @@ public:
     printf("G28 X0 Y0\n");
     printf("M84\n");
   }
-  virtual double GetExtrusionLength() { return extrude_dist_; }
+  virtual double GetExtrusionDistance() { return extrude_dist_; }
   virtual void Comment(const char *fmt, ...) {
     printf("; ");
     va_list ap; va_start(ap, fmt); vprintf(fmt, ap); va_end(ap);
@@ -99,12 +100,12 @@ public:
     last_x = x; last_y = y; last_z = z;
   }
   virtual void ResetExtrude() {
-    printf("M83\nG1 E2 ; filament back to nozzle tip\nM82\n");
+    printf("M83\nG1 E%.1f ; filament back to nozzle tip\nM82\n", kRetractAmount);
     printf("G92 E0  ; start extrusion\n");
     extrude_dist_ = 0;
   }
-  virtual void Retract(double amount) {
-    printf("M83\nG1 E%.1f ; retract\nM82\n", -amount);
+  virtual void Retract() {
+    printf("M83\nG1 E%.1f ; retract\nM82\n", -kRetractAmount);
   }
   virtual void SwitchFan(bool on) {
     printf("M106 S%d\n", on ? 255 : 0);
@@ -140,7 +141,7 @@ public:
   }
   virtual void SetSpeed(double feed_mm_per_sec) {}
   virtual void ResetExtrude() { }
-  virtual void Retract(double amount) {}
+  virtual void Retract() {}
   virtual void GoZPos(double z) {}
   virtual void MoveTo(double x, double y, double z) {
     printf("%.1f %.1f moveto\n", x, y);
@@ -149,7 +150,7 @@ public:
     printf("%.1f %.1f lineto\n", x, y);
   }
   virtual void SwitchFan(bool on) {}
-  virtual double GetExtrusionLength() { return 0; }
+  virtual double GetExtrusionDistance() { return 0; }
 };
 
 static int usage(const char *progname) {
@@ -228,12 +229,17 @@ static void CreateExtrusion(const Polygon &p,
       } else {
         run_len += distance(p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0);
       }
-      double fraction = run_len / polygon_len;
-      double a = angle + fraction * rotation_per_layer;
-      double x = p[i].x * cos(a) - p[i].y * sin(a);
-      double y = p[i].y * cos(a) + p[i].x * sin(a);
-      printer->ExtrudeTo(x + offset_x,
-                         y + offset_y, height + layer_height * fraction);
+      const double fraction = run_len / polygon_len;
+      const double a = angle + fraction * rotation_per_layer;
+      const double x = p[i].x * cos(a) - p[i].y * sin(a);
+      const double y = p[i].y * cos(a) + p[i].x * sin(a);
+      const double z = height + layer_height * fraction;
+      if (z < total_height - layer_height/2) {
+        printer->ExtrudeTo(x + offset_x, y + offset_y, z);
+      } else {
+        // The last half round, we stop extruding to have a smooth finish.
+        printer->MoveTo(x + offset_x, y + offset_y, z);
+      }
     }
 
     if (height > 1.5 && !fan_is_on) {
@@ -445,11 +451,11 @@ int main(int argc, char *argv[]) {
     printer->SetSpeed(layer_feedrate);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
-    double travel = printer->GetExtrusionLength();
+    double travel = printer->GetExtrusionDistance();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
     printer->SetSpeed(feed_mm_per_sec);
-    printer->Retract(3);
+    printer->Retract();
     printer->GoZPos(total_height + 5);
     double new_radius = GetRadius(polygon);
     if (!matryoshka) {
