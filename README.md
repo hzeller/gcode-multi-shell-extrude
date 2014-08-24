@@ -124,7 +124,8 @@ GCode. If you use a PostScript viewer such as `okular` that re-loads the content
 whenever the file changes, you can play with the options and see how things
 change. The first three layers of the spiral are shown, which gives an
 indication if the filament would stick - if the rotation is too quick, you see
-separate overlapping lines.
+separate overlapping lines. The thickness of the shell is roughly represented
+by the thickness of the line in the postscript output.
 
      $ ./multi-shell-extrude -h 5 -P > out.ps
      $ okular out.ps &    # start postscript viewer
