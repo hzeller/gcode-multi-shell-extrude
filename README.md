@@ -189,7 +189,7 @@ hilbert example from the `sample/` directory. The shells should be 1.2mm apart.
 We want them alternating in color, so we we print two colors with each 2.4mm
 apart. So be give both the shell increment value `-R 2.4`, but give different
 start values. The blue print starts with `-i 0`, so no initial offset. The
-orange print starts with `-i -1.2` (yes you can give negative values).
+orange print starts with `-i -1.2` (yes you can give negative values, then a polygon is constructed that fits on the _inside_).
 So now orange prints the offsets [ -1.2mm, 1.2mm, 3.6mm ], while blue
 prints [0mm, 2.4mm, 4.8mm ]. The resulting screws nest together nicely with 1.2mm
 distance:
