@@ -153,7 +153,8 @@ then they are all shown nested into each other
 ![Matryoshka hilbert][matryoshka-hilbert]
 
 Here a regular screw
-    ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 10 -d 5 -t aaaabaaaabaaaab -P -m > out.ps
+
+     ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 10 -d 5 -t aaaabaaaabaaaab -P -m > out.ps
 
 ![Matryoshka screw][matryoshka-screw]
 
