@@ -97,11 +97,14 @@ Printed twice with different filaments.
 
 ### Polygon given as data file
 
-Here, we generate two different colors in two rounds. We want to print the
+Here, we generate two different colors in two prints. We want to print the
 hilbert example from the `sample/` directory. The shells should be 1.4mm apart.
 We want them alternating in color, so we we print two colors with each 2.8mm
-apart. The initial shell value for orange starts with -1.4mm (yes, you can give
-negative offsets).
+apart. So be give both the shell increment value `-R 2.8`, but give different
+start values. The blue print starts with `-i 0`, so no initial offset. The
+orange print starts with `-i -1.4` (yes you can give negative values).
+So now oragange prints the offsets [ -1.4mm, 1.4mm, 4.2mm ], while orange
+prints [0mm, 2.8mm, 5.6mm ]. These all nest together nicely.
 
      ./multi-shell-extrude -n 3  -i -1.4 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
      ./multi-shell-extrude -n 3  -i 0 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
