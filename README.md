@@ -62,6 +62,8 @@ Now you can use it; here a little synopsis:
 
 Output (GCode or PostScript) is on stdout.
 
+See sample invocations below in the Gallery.
+
 Make sure to give the machine limits of your particular machine with the `-L` and
 `-o` option to get the most screws on your bed.
 
@@ -155,7 +157,7 @@ Printed twice with different filaments.
 
 `./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
 
-### Polygon given as data file
+### Polygon from data file
 
 Here, we generate two different colors in two prints. We want to print the
 hilbert example from the `sample/` directory. The shells should be 1.4mm apart.
@@ -163,11 +165,15 @@ We want them alternating in color, so we we print two colors with each 2.8mm
 apart. So be give both the shell increment value `-R 2.8`, but give different
 start values. The blue print starts with `-i 0`, so no initial offset. The
 orange print starts with `-i -1.4` (yes you can give negative values).
-So now oragange prints the offsets [ -1.4mm, 1.4mm, 4.2mm ], while orange
-prints [0mm, 2.8mm, 5.6mm ]. These all nest together nicely.
+So now orange prints the offsets [ -1.4mm, 1.4mm, 4.2mm ], while blue
+prints [0mm, 2.8mm, 5.6mm ]. The resulting screws nest together nicely with 1.4mm
+distance:
 
-     ./multi-shell-extrude -n 3  -i -1.4 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3  -i 0 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3 -i 0 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+
+![Hilbert Screws][hilbert-screw]
+![Shell-view][hilbert-shells]
 
 TODO
 ----
@@ -183,6 +189,8 @@ Have Fun!
 [print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
 [printrbot]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/printrbot.jpg
 [result]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/result.jpg
+[hilbert-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-screw.jpg
+[hilbert-shells]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-shells.jpg
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
 [matryoshka]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-view.png
 [steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
