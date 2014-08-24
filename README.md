@@ -126,11 +126,11 @@ change. The first three layers of the spiral are shown, which gives an
 indication if the filament would stick - if the rotation is too quick, you see
 separate overlapping lines.
 
-     $ ./multi-shell-extrude -h 5 -P > output.ps
-     $ okular output.ps &    # start postscript viewer
+     $ ./multi-shell-extrude -h 5 -P > out.ps
+     $ okular out.ps &    # start postscript viewer
      # now play around with the options and watch the changes. In the following
      # example, we set the pitch too steep, so we see overlaps
-     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > output.ps
+     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P -m > out.ps
 
 We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
 The layers of the 3D print now already miss the corresponding previous
@@ -172,17 +172,17 @@ Printed twice with different filaments.
 ### Polygon from data file
 
 Here, we generate two different colors in two prints. We want to print the
-hilbert example from the `sample/` directory. The shells should be 1.4mm apart.
-We want them alternating in color, so we we print two colors with each 2.8mm
-apart. So be give both the shell increment value `-R 2.8`, but give different
+hilbert example from the `sample/` directory. The shells should be 1.2mm apart.
+We want them alternating in color, so we we print two colors with each 2.4mm
+apart. So be give both the shell increment value `-R 2.4`, but give different
 start values. The blue print starts with `-i 0`, so no initial offset. The
-orange print starts with `-i -1.4` (yes you can give negative values).
-So now orange prints the offsets [ -1.4mm, 1.4mm, 4.2mm ], while blue
-prints [0mm, 2.8mm, 5.6mm ]. The resulting screws nest together nicely with 1.4mm
+orange print starts with `-i -1.2` (yes you can give negative values).
+So now orange prints the offsets [ -1.2mm, 1.2mm, 3.6mm ], while blue
+prints [0mm, 2.4mm, 4.8mm ]. The resulting screws nest together nicely with 1.2mm
 distance:
 
-     ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 -i  0   -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 -i -1.2 -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3 -i  0   -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
 
 ![Print Plan hilbert][orange-blue]
 ![Hilbert Screws][hilbert-screw]
