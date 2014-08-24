@@ -302,6 +302,7 @@ int main(int argc, char *argv[]) {
   int faces = 720;
   double initial_size = 10.0;
   double shell_increment = 1.6;
+  double initial_shell = 0;
   double head_offset_x = 45;
   double head_offset_y = 45;
   double feed_mm_per_sec = 100;
@@ -318,13 +319,14 @@ int main(int argc, char *argv[]) {
   const char *data_file = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:r:R:d:l:f:p:T:L:o:w:PD:u:m")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:s:R:i:d:l:f:p:T:L:o:w:PD:u:m")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'D': data_file = strdup(optarg); break;
     case 'h': total_height = atof(optarg); break;
     case 'n': screw_count = atoi(optarg); break;
-    case 'r': initial_size = atof(optarg); break;
+    case 's': initial_size = atof(optarg); break;
+    case 'i': initial_shell = atof(optarg); break;
     case 'R': shell_increment = atof(optarg); break;
     case 'd': thread_depth = atof(optarg); break;
     case 'l': layer_height = atof(optarg); break;
@@ -375,6 +377,10 @@ int main(int argc, char *argv[]) {
 
   if (pump > 0) {
     polygon = RadialPumpPolygon(polygon, pump);
+  }
+
+  if (initial_shell != 0) {
+    polygon = PolygonOffset(polygon, initial_shell);
   }
 
   double radius = GetRadius(polygon);
