@@ -12,6 +12,9 @@
 #include "third_party/clipper.hpp"
 
 Polygon PolygonOffset(const Polygon &polygon, double offset) {
+  if (fabs(offset) < 0.01)
+    return polygon;
+
   ClipperLib::Path path;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Point &p = polygon[i];
