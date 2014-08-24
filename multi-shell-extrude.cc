@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
   const char *data_file = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:s:R:i:d:l:f:p:T:L:o:w:PD:u:m")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:s:R:i:d:l:f:p:T:L:o:w:PD:u:mr:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'D': data_file = strdup(optarg); break;
@@ -373,6 +373,13 @@ int main(int argc, char *argv[]) {
     case 'w': twist = atof(optarg); break;
     case 'u': pump = atof(optarg); break;
     case 'm': matryoshka = true; break;
+    case 'r':
+      fprintf(stderr,
+              "Hello old-time user that knows about this option:\n"
+              "The option -r does not exist anymore. You "
+              "now want to look at -s\n");
+      return 1;
+      break;
     case 'L':
       if (2 != sscanf(optarg, "%lf,%lf", &machine_limit_x, &machine_limit_y)) {
         usage(argv[0]);
