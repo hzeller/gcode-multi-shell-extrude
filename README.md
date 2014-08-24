@@ -25,38 +25,42 @@ Compile it first
 Now you can use it; here a little synopsis:
 
      Usage: ./multi-shell-extrude -h <height> [<options>]
-     Template (flag -t) describes the shape. The letters in that string
-     describe the screw depth for a full turn.
-     A template 'AAZZZAAZZZAAZZZ' is a screw with three parallel threads,
-     with 'inner parts' (the one with the lower letter 'A') being 2/3
-     the width of the outer parts. 'AAZZZ' would have one thread per turn.
-     The string-length represents a full turn, so 'AAZZZZZZZZ' would
-     have one narrow thread.
-     The range of letters (here A..Z) is linearly mapped to the thread
-     depth.
-     Try 'AAZZMMZZZZ'. If you only use two letters, then 'AABBBAABBB'
-     is equivalent to 'AAZZZAAZZZ'
      Required parameter: -h <height>
-
+     
+      [ Screw from a string template]
          -t <template>     : template string, described above
                              (default "AABBBAABBBAABBB")
-         -h <height>       : Total height to be printed
-         -n <number-of-screws> : number of screws to be printed
-         -r <radius>       : radius of the smallest screw
-         -R <radius-increment> : increment between screws
+                           The following options -d and -w work for this:
+         -d <thread-depth> : depth of thread (default: radius/5)
          -w <twist>        : tWist ratio of angle per radius fraction
                              (good range: -0.3...0.3)
-         -d <thread-depth> : depth of thread (default: radius/5)
-         -l <layer-height> : Height of each layer
+
+      [ Screw from a polygon data file ]
+         -D <data>         : data file with polygon. Lines with x y pairs.
+
+      [ General parameters ]
+         -h <height>       : Total height to be printed
+         -s <initial-size> : Polygon sizing parameter.
+                             Means radius if from -t, factor for -D.
+         -u <pump>         : Pump up polygon as if the center was not a
+                             dot but a circle of <pump> radius
+         -n <number-of-screws> : number of screws to be printed
+         -R <radius-increment> : increment between screws, the clearance.
+         -l <layer-height> : Height of each layer.
          -f <feed-rate>    : maximum, in mm/s
          -T <layer-time>   : min time per layer; dynamically influences -f
          -p <pitch>        : how many mm height a full screw-turn takes
          -L <x,y>          : x/y size limit of your printbed.
          -o <dx,dy>        : dx/dy offset per print. Clearance needed from
                              hotend-tip to left and front essentially.
+     
+      [ Output options ]
          -P                : PostScript output instead of GCode output
+         -m                : For Postscript: show nested (Matryoshka doll style)
 
-GCode-output is on stdout.
+(TODO: make these long-options. The short-options are not really descriptive)
+
+Output (GCode or PostScript) is on stdout.
 
 Make sure to give the machine limits of your particular machine with the `-L` and
 `-o` option to get the most screws on your bed.
@@ -85,6 +89,23 @@ Printed twice with different filaments.
 (Printrbot Simple Metal)
 
 `./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
+
+Describing a screw with a template
+----------------------------------
+
+(TODO: describe better)
+
+Template (flag `-t`) describes the shape. The letters in that string
+describe the screw depth for a full turn.
+A template `AAZZZAAZZZAAZZZ` is a screw with three parallel threads,
+with 'inner parts' (the one with the lower letter 'A') being 2/3
+the width of the outer parts. `AAZZZ` would have one thread per turn.
+The string-length represents a full turn, so `AAZZZZZZZZ` would
+have one narrow thread.
+The range of letters (here A..Z) is linearly mapped to the thread
+depth.
+Try 'AAZZMMZZZZ'. If you only use two letters, then 'AABBBAABBB'
+is equivalent to 'AAZZZAAZZZ'
 
 Twist
 -----
