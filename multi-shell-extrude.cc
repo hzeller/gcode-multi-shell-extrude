@@ -492,7 +492,7 @@ int main(int argc, char *argv[]) {
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
-                     i, initial_shell + i * shell_increment);
+                     i+1, initial_shell + i * shell_increment);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
     const double travel = printer->GetExtrusionDistance();  // since last reset.
