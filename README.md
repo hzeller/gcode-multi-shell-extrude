@@ -181,9 +181,10 @@ So now orange prints the offsets [ -1.4mm, 1.4mm, 4.2mm ], while blue
 prints [0mm, 2.8mm, 5.6mm ]. The resulting screws nest together nicely with 1.4mm
 distance:
 
-     ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 -i 0 -R 2.8 -h 60 -p 180 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3 -i 0    -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
 
+![Print Plan hilbert][orange-blue]
 ![Hilbert Screws][hilbert-screw]
 ![Shell-view][hilbert-shells]
 
@@ -206,4 +207,5 @@ Have Fun!
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
 [matryoshka]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-view.png
 [steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
+[orange-blue]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/orange-blue.png
 [matryoshka-reference]: http://en.wikipedia.org/wiki/Matryoshka_doll
