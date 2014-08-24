@@ -119,8 +119,9 @@ private:
 
 class PostScriptPrinter : public Printer {
 public:
-  PostScriptPrinter(bool show_move_as_line)
-    : show_move_as_line_(show_move_as_line), in_move_color_(false) {}
+  PostScriptPrinter(bool show_move_as_line, double line_thickness)
+    : show_move_as_line_(show_move_as_line), line_thickness_(line_thickness),
+      in_move_color_(false) {}
   virtual void Preamble(double machine_limit_x, double machine_limit_y,
                         double feed_mm_per_sec) {
     const float mm_to_point = 1 / 25.4 * 72.0;
@@ -130,7 +131,8 @@ public:
   virtual void Init(double machine_limit_x, double machine_limit_y,
                     double feed_mm_per_sec) {
     printf("72.0 25.4 div dup scale  %% Switch to mm\n");
-    printf("0.2 setlinewidth %% mm\n");
+    printf("1 setlinejoin\n");
+    printf("%.2f setlinewidth %% mm\n", line_thickness_);
     printf("0 0 moveto\n");
   }
 
@@ -161,7 +163,7 @@ public:
   }
   virtual void ExtrudeTo(double x, double y, double z) {
     if (in_move_color_) {
-      ColorSwitch(0.2, 0, 0, 0);
+      ColorSwitch(line_thickness_, 0, 0, 0);
       in_move_color_ = false;
     }
     printf("%.1f %.1f lineto\n", x, y);
@@ -178,6 +180,7 @@ private:
   }
 
   const bool show_move_as_line_;
+  const float line_thickness_;
   bool in_move_color_;
 };
 
@@ -207,7 +210,8 @@ static int usage(const char *progname) {
           "\t -l <layer-height> : Height of each layer.\n"
           "\t -f <feed-rate>    : maximum, in mm/s\n"
           "\t -T <layer-time>   : min time per layer; dynamically influences -f\n"
-          "\t -p <pitch>        : how many mm height a full screw-turn takes\n"
+          "\t -p <pitch>        : how many mm height a full screw-turn takes.\n"
+          "\t                     negative for left screw. 0 for straight hull\n"
           "\t -L <x,y>          : x/y size limit of your printbed.\n"
           "\t -o <dx,dy>        : dx/dy offset per print. Clearance needed from\n"
           "\t                     hotend-tip to left and front essentially.\n"
@@ -321,9 +325,8 @@ double GetRadius(const Polygon &polygon) {
 }
 
 int main(int argc, char *argv[]) {
-  double start_x = 20;
-  double start_y = 20;
-
+  double start_x = 5;  // Initial edge offset.
+  double start_y = 5;
   // Some useful default values.
   double pitch = 30.0;
   double layer_height = 0.16;
@@ -333,14 +336,14 @@ int main(int argc, char *argv[]) {
   double machine_limit_x = 150, machine_limit_y = 150;
   int faces = 720;
   double initial_size = 10.0;
-  double shell_increment = 1.6;
+  double shell_increment = 1.2;
   double initial_shell = 0;
   double head_offset_x = 45;
   double head_offset_y = 45;
   double feed_mm_per_sec = 100;
-  double min_layer_time = 4.5;
+  double min_layer_time = 6;
   double thread_depth = -1;
-  double extrusion_fudge_factor = 1.9;  // empiric...
+  double shell_thickness_factor = 1.7;  // ~2*nozzzle = ~0.8mm shell thickness.
   int screw_count = 2;
   double twist = 0.0;
   double pump = 0.0;
@@ -421,13 +424,15 @@ int main(int argc, char *argv[]) {
     start_y = max_radius + 5;
   }
 
-  const double filament_extrusion_factor = extrusion_fudge_factor *
+  const double filament_extrusion_factor = shell_thickness_factor *
     (nozzle_radius * (layer_height/2)) / (filament_radius*filament_radius);
 
   Printer *printer = NULL;
   if (do_postscript) {
     total_height = std::min(total_height, 3 * layer_height); // not needed more.
-    printer = new PostScriptPrinter(!matryoshka);  // no move lines w/ Matryoshka
+    // no move lines w/ Matryoshka
+    printer = new PostScriptPrinter(!matryoshka,
+                                    shell_thickness_factor * 2*nozzle_radius);
   } else {
     printer = new GCodePrinter(filament_extrusion_factor);
   }
@@ -456,16 +461,23 @@ int main(int argc, char *argv[]) {
   printer->Init(machine_limit_x, machine_limit_y, feed_mm_per_sec);
 
   // How much the whole system should rotate per mm height.
-  const double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
+  const double rotation_per_mm = (fabs(pitch) < 0.1) ? 10000000.0 : 1.0 / pitch;
 
   double total_time = 0;
   double total_travel = 0;
 
-  double radius = GetRadius(base_polygon);
-  double x = std::max(start_x, radius + 5);
-  double y = std::max(start_y, radius + 5);
+  double x = start_x;
+  double y = start_y;
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
+    Polygon polygon = PolygonOffset(base_polygon,
+                                    initial_shell + i * shell_increment);
+    double radius = GetRadius(polygon);
+    if (!matryoshka) {
+      // New center.
+      x += radius;
+      y += radius;
+    }
     if (x + radius + 5 > machine_limit_x || y + radius + 5 > machine_limit_y) {
       fprintf(stderr, "With currently configured bedsize and printhead-offset, "
               "only %d screws fit.\n"
@@ -475,8 +487,6 @@ int main(int argc, char *argv[]) {
       break;
     }
     printer->MoveTo(x, y, i > 0 ? total_height + 5 : 5);
-    Polygon polygon = PolygonOffset(base_polygon,
-                                    initial_shell + i * shell_increment);
     double layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printer->ResetExtrude();
@@ -485,23 +495,21 @@ int main(int argc, char *argv[]) {
                      i, initial_shell + i * shell_increment);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
-    double travel = printer->GetExtrusionDistance();
+    const double travel = printer->GetExtrusionDistance();  // since last reset.
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
     printer->SetSpeed(feed_mm_per_sec);
     printer->Retract();
     printer->GoZPos(total_height + 5);
-    double new_radius = GetRadius(polygon);
     if (!matryoshka) {
-      x += head_offset_x + radius + new_radius;
-      y += head_offset_y + radius + new_radius;
+      x += head_offset_x + radius;
+      y += head_offset_y + radius;
     }
-    radius = new_radius;
   }
 
   printer->Postamble();
   if (total_time > 0) {  // doesn't make sense to print for PostScript
-    fprintf(stderr, "Total time about %.0f seconds; %.2fm filament\n",
+    fprintf(stderr, "Total time >= %.0f seconds; %.2fm filament\n",
             total_time, total_travel * filament_extrusion_factor / 1000);
   }
 }
