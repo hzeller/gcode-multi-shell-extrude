@@ -461,7 +461,7 @@ int main(int argc, char *argv[]) {
   printer->Init(machine_limit_x, machine_limit_y, feed_mm_per_sec);
 
   // How much the whole system should rotate per mm height.
-  const double rotation_per_mm = (fabs(pitch) < 0.1) ? 10000000.0 : 1.0 / pitch;
+  const double rotation_per_mm = (fabs(pitch) < 0.1) ? 0 : 1.0 / pitch;
 
   double total_time = 0;
   double total_travel = 0;
