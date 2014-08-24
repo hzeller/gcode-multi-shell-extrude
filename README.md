@@ -122,16 +122,26 @@ on the printbed. So there is the option `-P` to output postscript instead of
 GCode. If you use a PostScript viewer such as `okular` that re-loads the content
 whenever the file changes, you can play with the options and see how things
 change. The first three layers of the spiral are shown, which gives an
-indication if the filament would stick.
+indication if the filament would stick - if the rotation is too quick, you see
+separate overlapping lines.
 
      $ ./multi-shell-extrude -h 5 -P > output.ps
      $ okular output.ps &    # start postscript viewer
-     # now play around with the options and watch the changes
-     $ ./multi-shell-extrude -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > output.ps
+     # now play around with the options and watch the changes. In the following
+     # example, we set the pitch too steep, so we see overlaps
+     $ ./multi-shell-extrude -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > output.ps
+
+The overlaps from the too steep pitch can be seen in the following output:
+individual layers are not overlapping sufficiently anymore. Either increase
+pitch `-p` or decrease layer-height `-l`:
+
+![Steep pitch][steep-pitch]
 
 The usual view displays exactly the layout on the print-bed. If you want to see
 how the screws nest, add the `-m` parameter (like Matryoshka, the nested doll),
 then they are all shown nested into each other
+
+     ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > output.ps
 
 ![Matryoshka view][matryoshka]
 
@@ -151,3 +161,4 @@ Have Fun!
 [result]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/result.jpg
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
 [matryoshka]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-view.png
+[steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
