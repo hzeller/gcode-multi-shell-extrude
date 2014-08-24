@@ -24,8 +24,13 @@
 
 class Printer {
 public:
+  // Preamble: what to do to start the file.
   virtual void Preamble(double machine_limit_x, double machine_limit_y,
                         double feed_mm_per_sec) = 0;
+
+  // Initialization
+  virtual void Init(double machine_limit_x, double machine_limit_y,
+                    double feed_mm_per_sec) = 0;
   virtual void Postamble() = 0;
   virtual void Comment(const char *fmt, ...) PRINTF_FMT_CHECK(2, 3) = 0;
   virtual void SetSpeed(double feed_mm_per_sec) = 0;
@@ -45,6 +50,11 @@ public:
 
   virtual void Preamble(double machine_limit_x, double machine_limit_y,
                         double feed_mm_per_sec) {
+    printf("; G-Code\n\n");
+  }
+
+  virtual void Init(double machine_limit_x, double machine_limit_y,
+                    double feed_mm_per_sec) {
     printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
     printf("G1 X150 Y10 Z30\n");
     printf("M109 S190\nM116\n");
@@ -114,9 +124,13 @@ public:
     const float mm_to_point = 1 / 25.4 * 72.0;
     printf("%%!PS-Adobe-3.0\n%%%%BoundingBox: 0 0 %.0f %.0f\n\n",
            machine_limit_x * mm_to_point, machine_limit_y * mm_to_point);
+  }
+  virtual void Init(double machine_limit_x, double machine_limit_y,
+                    double feed_mm_per_sec) {
     printf("72.0 25.4 div dup scale  %% Switch to mm\n");
     printf("0.2 setlinewidth %% mm\n");
   }
+
   virtual void Postamble() {
     printf("stroke\nshowpage\n");
   }
@@ -401,6 +415,8 @@ int main(int argc, char *argv[]) {
                   machine_limit_x, machine_limit_y,
                   head_offset_x, head_offset_y);
   printer->Comment("----\n");
+
+  printer->Init(machine_limit_x, machine_limit_y, feed_mm_per_sec);
 
   // How much the whole system should rotate per mm height.
   const double rotation_per_mm = (pitch == 0) ? 10000000.0 : 1.0 / pitch;
