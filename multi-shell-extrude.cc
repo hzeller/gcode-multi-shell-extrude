@@ -60,7 +60,7 @@ public:
     printf("G1 X150 Y10 Z30\n");
     printf("M109 S190\nM116\n");
     printf("M82 ; absolute extrusion\n");
-    printf("G92 E0  ; nozzle clean extrusion\n");
+    printf("G92 E0\n; test extrusion...\n");
     const double test_extrusion_from = 0.8 * machine_limit_x;
     const double test_extrusion_to = 0.2 * machine_limit_x;
     const double length = test_extrusion_from - test_extrusion_to;
@@ -100,7 +100,10 @@ public:
     last_x = x; last_y = y; last_z = z;
   }
   virtual void ResetExtrude() {
-    printf("M83\nG1 E%.1f ; filament back to nozzle tip\nM82\n", kRetractAmount);
+    printf("M83\n"  // extruder relative mode
+           "G1 E%.1f ; filament back to nozzle tip\n"
+           "M82\n", // extruder absolute mode
+           1.1 * kRetractAmount);  // fudging... a bit more squeeze.
     printf("G92 E0  ; start extrusion\n");
     extrude_dist_ = 0;
   }
@@ -444,7 +447,11 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < argc; ++i) printf("%s ", argv[i]);
   printf("\n");
   printer->Comment("\n");
-  printer->Comment("screw template '%s'\n", fun_init);
+  if (data_file) {
+    printer->Comment("Polygon from datafile '%s'\n", data_file);
+  } else {
+    printer->Comment("Polygon from screw template '%s'\n", fun_init);
+  }
   printer->Comment("size=%.1fmm h=%.1fmm n=%d (shell-increment=%.1fmm)\n",
                    initial_size, total_height, screw_count, shell_increment);
   printer->Comment("thread-depth=%.1fmm faces=%d\n",
