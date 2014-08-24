@@ -148,13 +148,13 @@ spread out. If you want to see how the screws nest, add the `-m` parameter
 (like [Matryoshka][matryoshka-reference], the nested doll),
 then they are all shown nested into each other
 
-     ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > out.ps
+     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > out.ps
 
 ![Matryoshka hilbert][matryoshka-hilbert]
 
 Here a regular screw
 
-     ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 10 -d 5 -t aaaabaaaabaaaab -P -m > out.ps
+     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -d 5 -t aaaabaaaabaaaab -P -m > out.ps
 
 ![Matryoshka screw][matryoshka-screw]
 
