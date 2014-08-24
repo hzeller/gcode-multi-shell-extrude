@@ -5,40 +5,30 @@
 
 #include "multi-shell-extrude.h"
 
+// Offset using the clipper library.
+// http://www.angusj.com/delphi/clipper/documentation/Docs/Units/ClipperLib/Classes/ClipperOffset/_Body.htm
+
 #include <stdio.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Polygon_2.h>
-#include <CGAL/create_offset_polygons_2.h>
+#include "third_party/clipper.hpp"
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel CG_K ;
-typedef CG_K::FT                        CG_FT;
-typedef CG_K::Point_2                   CG_Point ;
-typedef CGAL::Polygon_2<CG_K>           CG_Polygon_2 ;
-typedef CGAL::Straight_skeleton_2<CG_K> CG_Ss ;
-typedef boost::shared_ptr<CG_Polygon_2> CG_PolygonPtr ;
-typedef std::vector<CG_PolygonPtr> CG_PolygonVector;
-
-// Essentially Minkowsky, but simplified using skeletons
-// http://doc.cgal.org/latest/Straight_skeleton_2/index.html
 Polygon PolygonOffset(const Polygon &polygon, double offset) {
-  CG_Polygon_2 cg_poly;
+  ClipperLib::Path path;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Point &p = polygon[i];
-    cg_poly.push_back(CG_Point(p.x, p.y));
-  }
-  cg_poly.push_back(CG_Point(polygon[0].x, polygon[0].y));
-  CG_FT cg_offset = offset;
-  
-  CG_PolygonVector cg_outer
-    = CGAL::create_exterior_skeleton_and_offset_polygons_2(cg_offset, cg_poly);
-  
-  Polygon result;
-  CG_Polygon_2 &cg_out_poly = *cg_outer[1];  // [0] contains bounding box (?)
-  // For some reason, the resulting polygon turns around right; to get a left
-  // turning polygon, reverse it.
-  for (int i = (int)cg_out_poly.size() - 1; i >= 0; --i) {
-    result.push_back(Point(cg_out_poly[i].x(), cg_out_poly[i].y()));
+    path.push_back(ClipperLib::IntPoint(100 * p.x, 100 * p.y));
   }
 
+  ClipperLib::Paths solutions;
+  ClipperLib::ClipperOffset co;
+  co.AddPath(path, ClipperLib::jtRound, ClipperLib::etClosedPolygon);
+  co.Execute(solutions, 100.0 * offset);
+
+  Polygon result;
+  // We essentially look at the first solution.
+  ClipperLib::Path &cp_solution = solutions[0];
+  for (std::size_t i = 0; i < cp_solution.size(); ++i) {
+    const ClipperLib::IntPoint &p = cp_solution[i];
+    result.push_back(Point(p.X / 100.0, p.Y / 100.0));
+  }
   return result;
 }
