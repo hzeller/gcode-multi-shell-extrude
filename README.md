@@ -182,7 +182,7 @@ prints [0mm, 2.8mm, 5.6mm ]. The resulting screws nest together nicely with 1.4m
 distance:
 
      ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 -i 0    -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 -i  0   -R 2.8 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
 
 ![Print Plan hilbert][orange-blue]
 ![Hilbert Screws][hilbert-screw]

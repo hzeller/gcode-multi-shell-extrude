@@ -142,7 +142,10 @@ public:
     va_list ap; va_start(ap, fmt); vprintf(fmt, ap); va_end(ap);
   }
   virtual void SetSpeed(double feed_mm_per_sec) {}
-  virtual void ResetExtrude() { }
+  virtual void ResetExtrude() {
+    printf("%% Flush lines but remember where we are.\n"
+           "currentpoint\nstroke\nmoveto\n");
+  }
   virtual void Retract() {}
   virtual void GoZPos(double z) {}
   virtual void MoveTo(double x, double y, double z) {
@@ -236,7 +239,7 @@ static void CreateExtrusion(const Polygon &p,
                             double offset_x, double offset_y,
                             double layer_height, double total_height,
                             double rotation_per_mm) {
-  printer->Comment("Screw center X=%.1f Y=%.1f\n", offset_x, offset_y);
+  printer->Comment("Center X=%.1f Y=%.1f\n", offset_x, offset_y);
   const double polygon_len = CalcPolygonLen(p);
   const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
@@ -478,6 +481,8 @@ int main(int argc, char *argv[]) {
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
+    printer->Comment("Screw #%d, polygon-offset=%.1f\n",
+                     i, initial_shell + i * shell_increment);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
     double travel = printer->GetExtrusionDistance();
