@@ -131,7 +131,7 @@ by the thickness of the line in the postscript output.
      $ okular out.ps &    # start postscript viewer
      # now play around with the options and watch the changes. In the following
      # example, we set the pitch too steep, so we see overlaps
-     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P -m > out.ps
+     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > out.ps
 
 We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
 The layers of the 3D print now already miss the corresponding previous
