@@ -103,7 +103,10 @@ is equivalent to `AAZZZAAZZZ`
 
 The experimental `-w` parameter allows to give things a little twist:
 
-     ./multi-shell-extrude -l 0.12 -p 120 -d 12 -r 10 -R 2 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 -w 0.2 -t ABABABABAB > twist.gcode
+      ./multi-shell-extrude -p 120 -d 12 -h 60 -w 0.2 -t ABABABABAB > twist.gcode
+
+Note, we are giving a relatively high pitch value to manage the overlaps
+between layers - see below in PostScript output an example.
 
 ### Reading Polygon from File
 
@@ -157,14 +160,14 @@ Gallery
 
 This result was created with this commandline:
 
-    ./multi-shell-extrude -l 0.12 -d 2 -r 10 -R 1.5 -T 4 -n 4 -h 60 -L 305,305 -o 50,50 > out.gcode
+    ./multi-shell-extrude -l 0.12 -d 2 -s 10 -R 1.5 -n 4 -h 60 -L 305,305 -o 50,50 > out.gcode
 
 Printed twice with different filaments.
 
 ![Printrbot][printrbot]
 (Printrbot Simple Metal)
 
-`./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
+`./multi-shell-extrude -l 0.12 -d 2 -s 16 -R 1.5 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
 
 ### Polygon from data file
 
@@ -178,8 +181,8 @@ So now orange prints the offsets [ -1.4mm, 1.4mm, 4.2mm ], while blue
 prints [0mm, 2.8mm, 5.6mm ]. The resulting screws nest together nicely with 1.4mm
 distance:
 
-     ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 -i 0 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 -i -1.4 -R 2.8 -h 60 -p 180 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3 -i 0 -R 2.8 -h 60 -p 180 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
 
 ![Hilbert Screws][hilbert-screw]
 ![Shell-view][hilbert-shells]
