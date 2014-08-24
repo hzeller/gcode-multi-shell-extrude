@@ -133,12 +133,13 @@ separate overlapping lines.
 
 The overlaps from the too steep pitch can be seen in the following output:
 individual layers are not overlapping sufficiently anymore. Either increase
-pitch `-p` or decrease layer-height `-l`:
+pitch `-p` (number of mm height for a full turn) or decrease layer-height `-l`:
 
 ![Steep pitch][steep-pitch]
 
-The usual view displays exactly the layout on the print-bed. If you want to see
-how the screws nest, add the `-m` parameter (like Matryoshka, the nested doll),
+The usual view displays exactly the layout on the print-bed with all screws
+spread out. If you want to see how the screws nest, add the `-m` parameter
+(like [Matryoshka][matryoshka-reference], the nested doll),
 then they are all shown nested into each other
 
      ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > output.ps
@@ -162,3 +163,4 @@ Have Fun!
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
 [matryoshka]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-view.png
 [steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
+[matryoshka-reference]: http://en.wikipedia.org/wiki/Matryoshka_doll
