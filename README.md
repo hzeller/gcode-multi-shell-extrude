@@ -22,11 +22,12 @@ Compile it first
 
     $ make
 
-Now you can use it; here a little synopsis:
+Now you can use it; here a little synopsis that you get if you invoke the program
+without parameters.
 
      Usage: ./multi-shell-extrude -h <height> [<options>]
      Required parameter: -h <height>
-     
+
       [ Screw from a string template]
          -t <template>     : template string, described above
                              (default "AABBBAABBBAABBB")
@@ -49,11 +50,12 @@ Now you can use it; here a little synopsis:
          -l <layer-height> : Height of each layer.
          -f <feed-rate>    : maximum, in mm/s
          -T <layer-time>   : min time per layer; dynamically influences -f
-         -p <pitch>        : how many mm height a full screw-turn takes
+         -p <pitch>        : how many mm height a full screw-turn takes.
+                             negative for left screw. 0 for straight hull
          -L <x,y>          : x/y size limit of your printbed.
          -o <dx,dy>        : dx/dy offset per print. Clearance needed from
                              hotend-tip to left and front essentially.
-     
+
       [ Output options ]
          -P                : PostScript output instead of GCode output
          -m                : For Postscript: show nested (Matryoshka doll style)
