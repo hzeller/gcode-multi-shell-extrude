@@ -75,7 +75,12 @@ the needed clearance).
 ![Print diagonally][print]
 (Type-A Machine Series 1 2014)
 
-The result are shells that can be screwed into each other
+The result are shells that can be screwed into each other.
+
+Gallery
+-------
+
+### Simple screw
 
 ![Result][result]
 
@@ -89,6 +94,17 @@ Printed twice with different filaments.
 (Printrbot Simple Metal)
 
 `./multi-shell-extrude -l 0.12 -d 2 -r 16 -R 1.5 -T 4 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
+
+### Polygon given as data file
+
+Here, we generate two different colors in two rounds. We want to print the
+hilbert example from the `sample/` directory. The shells should be 1.4mm apart.
+We want them alternating in color, so we we print two colors with each 2.8mm
+apart. The initial shell value for orange starts with -1.4mm (yes, you can give
+negative offsets).
+
+     ./multi-shell-extrude -n 3  -i -1.4 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3  -i 0 -R 2.8 -h 60 -p 180 -T 8 -o 50,50 -L250,250 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
 
 Describing a screw with a template
 ----------------------------------
@@ -104,8 +120,8 @@ The string-length represents a full turn, so `AAZZZZZZZZ` would
 have one narrow thread.
 The range of letters (here A..Z) is linearly mapped to the thread
 depth.
-Try 'AAZZMMZZZZ'. If you only use two letters, then 'AABBBAABBB'
-is equivalent to 'AAZZZAAZZZ'
+Try `AAZZMMZZZZ`. If you only use two letters, then `AABBBAABBB`
+is equivalent to `AAZZZAAZZZ`
 
 Twist
 -----
@@ -131,11 +147,15 @@ separate overlapping lines.
      # example, we set the pitch too steep, so we see overlaps
      $ ./multi-shell-extrude -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > output.ps
 
-The overlaps from the too steep pitch can be seen in the following output:
-individual layers are not overlapping sufficiently anymore. Either increase
-pitch `-p` (number of mm height for a full turn) or decrease layer-height `-l`:
+We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
+The layers of the 3D print now already miss the corresponding previous
+layer -- they are not overlapping sufficiently anymore. We can see this in the
+following PostScript output, even before we mess up the print:
 
 ![Steep pitch][steep-pitch]
+
+To fix, either increase pitch `-p` (number of mm height for a full turn) or
+decrease layer-height `-l`.
 
 The usual view displays exactly the layout on the print-bed with all screws
 spread out. If you want to see how the screws nest, add the `-m` parameter
