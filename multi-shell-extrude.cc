@@ -366,24 +366,20 @@ int main(int argc, char *argv[]) {
   matryoshka &= do_postscript;   // Anyway, let's formulate it also this way
 
   // Get polygon we'll be working on.
-  Polygon polygon = data_file
+  Polygon base_polygon = data_file
     ? ReadPolygon(data_file, initial_size)
     : RotationalPolygon(fun_init, initial_size, thread_depth, twist);
 
-  if (polygon.empty()) {
+  if (base_polygon.empty()) {
     fprintf(stderr, "Polygon empty\n");
     return 1;
   }
 
   if (pump > 0) {
-    polygon = RadialPumpPolygon(polygon, pump);
+    base_polygon = RadialPumpPolygon(base_polygon, pump);
   }
 
-  if (initial_shell != 0) {
-    polygon = PolygonOffset(polygon, initial_shell);
-  }
-
-  double radius = GetRadius(polygon);
+  double radius = GetRadius(base_polygon);
 
   if (matryoshka) {
     machine_limit_x = 2 * radius + 2 * start_x;
@@ -444,13 +440,14 @@ int main(int argc, char *argv[]) {
       break;
     }
     printer->MoveTo(x, y, i > 0 ? total_height + 5 : 5);
+    Polygon polygon = PolygonOffset(base_polygon,
+                                    initial_shell + i * shell_increment);
     double layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
                     rotation_per_mm);
-    polygon = PolygonOffset(polygon, shell_increment);
     double travel = printer->GetExtrusionLength();
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)

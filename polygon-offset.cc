@@ -19,8 +19,8 @@ Polygon PolygonOffset(const Polygon &polygon, double offset) {
   }
 
   ClipperLib::Paths solutions;
-  ClipperLib::ClipperOffset co(2.0, 12);
-  co.AddPath(path, ClipperLib::jtSquare, ClipperLib::etClosedPolygon);
+  ClipperLib::ClipperOffset co(2.0, 10);
+  co.AddPath(path, ClipperLib::jtRound, ClipperLib::etClosedPolygon);
   co.Execute(solutions, 100.0 * offset);
 
   Polygon result;
