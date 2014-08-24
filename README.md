@@ -144,7 +144,11 @@ To fix, either increase pitch `-p` (number of mm height for a full turn) or
 decrease layer-height `-l`.
 
 The usual view displays exactly the layout on the print-bed with all screws
-spread out. If you want to see how the screws nest, add the `-m` parameter
+spread out.
+
+![Postscript bed view][postscript-bed-layout]
+
+If you want to see how the screws nest, add the `-m` parameter
 (like [Matryoshka][matryoshka-reference], the nested doll),
 then they are all shown nested into each other
 
@@ -212,6 +216,7 @@ Have Fun!
 [hilbert-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-screw.jpg
 [hilbert-shells]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-shells.jpg
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
+[postscript-bed-layout]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/postscript-bed-layout.png
 [matryoshka-hilbert]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-hilbert.png
 [matryoshka-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-screw.png
 [steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
