@@ -68,7 +68,7 @@ public:
            test_extrusion_from, test_extrusion_to,
            length * filament_extrusion_factor_);
     printf("G1 Z5\n");
-    printf("M83\nG1 E-3 ; retract\nM82\n");  // relative, retract, absolute
+    printf("M83\nG1 E%.1f ; retract\nM82\n", -kRetractAmount);
   }
   virtual void Postamble() {
     printf("M104 S0 ; hotend off\n");
