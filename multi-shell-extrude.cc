@@ -269,6 +269,8 @@ Polygon ReadPolygon(const char *filename, double factor) {
 
 // Pump a polygon as if it was not arranged a dot but a circle of radius pump_r
 Polygon RadialPumpPolygon(const Polygon& polygon, double pump_r) {
+  if (pump_r <= 0)
+    return polygon;
   Polygon result;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Point &p = polygon[i];
@@ -365,18 +367,17 @@ int main(int argc, char *argv[]) {
 
   matryoshka &= do_postscript;   // Anyway, let's formulate it also this way
 
-  // Get polygon we'll be working on.
-  Polygon base_polygon = data_file
-    ? ReadPolygon(data_file, initial_size)
-    : RotationalPolygon(fun_init, initial_size, thread_depth, twist);
+  // Get polygon we'll be working on. Add pump if needed.
+  const Polygon base_polygon =
+    RadialPumpPolygon(data_file
+                      ? ReadPolygon(data_file, initial_size)
+                      : RotationalPolygon(fun_init, initial_size,
+                                          thread_depth, twist),
+                      pump);
 
   if (base_polygon.empty()) {
     fprintf(stderr, "Polygon empty\n");
     return 1;
-  }
-
-  if (pump > 0) {
-    base_polygon = RadialPumpPolygon(base_polygon, pump);
   }
 
   double radius = GetRadius(base_polygon);
