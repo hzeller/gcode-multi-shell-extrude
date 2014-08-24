@@ -129,6 +129,11 @@ indication if the filament would stick.
      # now play around with the options and watch the changes
      $ ./multi-shell-extrude -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > output.ps
 
+The usual view displays exactly the layout on the print-bed. If you want to see
+how the screws nest, add the `-m` parameter (like Matryoshka, the nested doll),
+then they are all shown nested into each other
+
+![Matryoshka view][matryoshka]
 
 TODO
 ----
@@ -145,3 +150,4 @@ Have Fun!
 [printrbot]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/printrbot.jpg
 [result]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/result.jpg
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
+[matryoshka]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-view.png
