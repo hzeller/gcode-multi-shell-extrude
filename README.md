@@ -136,7 +136,7 @@ by the thickness of the line in the postscript output.
 We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
 The layers of the 3D print now already miss the corresponding previous
 layer -- they are not overlapping sufficiently anymore. We can see this in the
-following PostScript output, even before we mess up the print:
+following PostScript output, so we don't mess up a 3D print.
 
 ![Steep pitch][steep-pitch]
 
@@ -148,9 +148,14 @@ spread out. If you want to see how the screws nest, add the `-m` parameter
 (like [Matryoshka][matryoshka-reference], the nested doll),
 then they are all shown nested into each other
 
-     ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > output.ps
+     ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > out.ps
 
-![Matryoshka view][matryoshka]
+![Matryoshka hilbert][matryoshka-hilbert]
+
+Here a regular screw
+    ./multi-shell-extrude -n 5 -i -1.4 -R 1.4 -h 10 -p 180 -s 10 -d 5 -t aaaabaaaabaaaab -P -m > out.ps
+
+![Matryoshka screw][matryoshka-screw]
 
 Gallery
 -------
@@ -206,7 +211,8 @@ Have Fun!
 [hilbert-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-screw.jpg
 [hilbert-shells]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-shells.jpg
 [multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
-[matryoshka]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-view.png
+[matryoshka-hilbert]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-hilbert.png
+[matryoshka-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-screw.png
 [steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
 [orange-blue]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/orange-blue.png
 [matryoshka-reference]: http://en.wikipedia.org/wiki/Matryoshka_doll
