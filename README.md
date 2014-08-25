@@ -160,9 +160,15 @@ then they are all shown nested into each other
 
 Here a regular screw
 
-     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -d 5 -t aaaabaaaabaaaab -P -m > out.ps
+     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -d 5 -t aaabaaabaaab -P -m > out.ps
 
 ![Matryoshka screw][matryoshka-screw]
+
+.. and here 20 screws nested
+
+    ./multi-shell-extrude -n 20 -h 10 -p 180 -s 5 -d 5 -t aaabaaabaaab -P -m > out.ps
+
+![Many screws][many-screws]
 
 Gallery
 -------
@@ -226,6 +232,7 @@ Have Fun!
 [postscript-bed-layout]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/postscript-bed-layout.png
 [matryoshka-hilbert]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-hilbert.png
 [matryoshka-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-screw.png
+[many-screws]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/many-screws.png
 [steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
 [orange-blue]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/orange-blue.png
 [matryoshka-reference]: http://en.wikipedia.org/wiki/Matryoshka_doll
