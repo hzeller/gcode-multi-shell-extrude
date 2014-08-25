@@ -8,7 +8,6 @@
 // Offset using the clipper library.
 // http://www.angusj.com/delphi/clipper/documentation/Docs/Units/ClipperLib/Classes/ClipperOffset/_Body.htm
 
-#include <stdio.h>
 #include "third_party/clipper.hpp"
 
 Polygon PolygonOffset(const Polygon &polygon, double offset) {
