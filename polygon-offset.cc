@@ -22,7 +22,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset) {
   }
 
   ClipperLib::Paths solutions;
-  ClipperLib::ClipperOffset co(2.0, 10);
+  ClipperLib::ClipperOffset co(2.0, 5); // 5/100mm = 1/20mm
   co.AddPath(path, ClipperLib::jtRound, ClipperLib::etClosedPolygon);
   co.Execute(solutions, 100.0 * offset);
 
