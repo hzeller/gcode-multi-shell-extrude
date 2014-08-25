@@ -60,6 +60,7 @@ public:
     printf("G1 X150 Y10 Z30\n");
     printf("M109 S190\nM116\n");
     printf("M82 ; absolute extrusion\n");
+    printf("G1 E5\n"); // squirt out stuff.
     printf("G92 E0\n; test extrusion...\n");
     const double test_extrusion_from = 0.8 * machine_limit_x;
     const double test_extrusion_to = 0.2 * machine_limit_x;
@@ -67,8 +68,8 @@ public:
     printf("G1 X%.1f Y10 Z0\nG1 X%.1f Y10 E%.3f F1000\n",
            test_extrusion_from, test_extrusion_to,
            length * filament_extrusion_factor_);
+    printf("M83\nG1 E%.1f ; retract\nM82\n", -kRetractAmount); // in rel mode.
     printf("G1 Z5\n");
-    printf("M83\nG1 E%.1f ; retract\nM82\n", -kRetractAmount);
   }
   virtual void Postamble() {
     printf("M104 S0 ; hotend off\n");
@@ -210,6 +211,8 @@ static int usage(const char *progname) {
           "\t                     dot but a circle of <pump> radius\n"
           "\t -n <number-of-screws> : number of screws to be printed\n"
           "\t -R <radius-increment> : increment between screws, the clearance.\n"
+          "\t -S <stop-offset>  : EXPERIMENTAL offset to stop screw\n"
+          "\t                     around (radius_increment - 0.8)/2 + 0.05\n"
           "\t -l <layer-height> : Height of each layer.\n"
           "\t -f <feed-rate>    : maximum, in mm/s\n"
           "\t -T <layer-time>   : min time per layer; dynamically influences -f\n"
@@ -241,24 +244,67 @@ double CalcPolygonLen(const Polygon &polygon) {
 }
 
 // Requires: Polygon with centroid on (0,0)
-static void CreateExtrusion(const Polygon &p,
+static void CreateExtrusion(const Polygon &extrusion_polygon,
                             Printer *printer,
                             double offset_x, double offset_y,
                             double layer_height, double total_height,
-                            double rotation_per_mm) {
+                            double rotation_per_mm,
+                            double lock_offset) {
   printer->Comment("Center X=%.1f Y=%.1f\n", offset_x, offset_y);
-  const double polygon_len = CalcPolygonLen(p);
   const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
   printer->SwitchFan(false);
   double height = 0;
   double angle = 0;
   double run_len = 0;
-  const int psteps = p.size();
-  printer->MoveTo(p[0].x + offset_x, p[0].y + offset_y, 0);
+  const bool do_lock = (lock_offset > 0);
+  double polygon_len = 0;
+  Polygon p;  // active polygon.
+  static const int kLockOverlap = 3;
+  enum State {
+    START, WIDE_LOCK, NORMAL, NARROW_LOCK
+  };
+  enum State state = START;
+  enum State prev_state;
   for (height = 0, angle=0; height < total_height;
        height += layer_height, angle += rotation_per_layer) {
-    for (int i = 0; i < psteps; ++i) {
+    prev_state = state;
+
+    // What to print. For lock we're very simple: we just offset the
+    // polygon, but don't do any transition for now.
+    switch (state) {
+    case START:
+      if (do_lock) {
+        state = WIDE_LOCK;
+        p = PolygonOffset(extrusion_polygon, lock_offset);
+      } else {
+        state = NORMAL;
+        p = extrusion_polygon;
+      }
+      break;
+
+    case WIDE_LOCK:
+      if (do_lock && height > kLockOverlap) {
+        p = extrusion_polygon;
+        state = NORMAL;
+      }
+      break;
+
+    case NORMAL:
+      if (do_lock && height > total_height - kLockOverlap) {
+        p = PolygonOffset(extrusion_polygon, -lock_offset);
+        state = NARROW_LOCK;
+      }
+      break;
+    case NARROW_LOCK: /* terminal state */ break;
+    }
+
+    if (state != prev_state) {
+      polygon_len = CalcPolygonLen(p);
+      printer->MoveTo(p[0].x + offset_x, p[0].y + offset_y, height);
+    }
+
+    for (int i = 0; i < (int) p.size(); ++i) {
       if (i == 0) {
         run_len = 0;
       } else {
@@ -346,18 +392,19 @@ int main(int argc, char *argv[]) {
   double feed_mm_per_sec = 100;
   double min_layer_time = 6;
   double thread_depth = -1;
-  double shell_thickness_factor = 1.7;  // ~2*nozzzle = ~0.8mm shell thickness.
+  double shell_thickness_factor = 1.9;  // ~2*nozzzle = ~0.8mm shell thickness.
   int screw_count = 2;
   double twist = 0.0;
   double pump = 0.0;
   bool do_postscript = false;
   bool matryoshka = false;
+  double lock_offset = -1;
 
   const char *fun_init = "AABBBAABBBAABBB";
   const char *data_file = NULL;
 
   int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:s:R:i:d:l:f:p:T:L:o:w:PD:u:mr:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:h:n:s:R:i:d:l:f:p:T:L:o:w:PD:u:mr:S:")) != -1) {
     switch (opt) {
     case 't': fun_init = strdup(optarg); break;
     case 'D': data_file = strdup(optarg); break;
@@ -366,6 +413,7 @@ int main(int argc, char *argv[]) {
     case 's': initial_size = atof(optarg); break;
     case 'i': initial_shell = atof(optarg); break;
     case 'R': shell_increment = atof(optarg); break;
+    case 'S': lock_offset = atof(optarg); break;
     case 'd': thread_depth = atof(optarg); break;
     case 'l': layer_height = atof(optarg); break;
     case 'f': feed_mm_per_sec = atof(optarg); break;
@@ -508,7 +556,7 @@ int main(int argc, char *argv[]) {
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
                      i+1, initial_shell + i * shell_increment);
     CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
-                    rotation_per_mm);
+                    rotation_per_mm, lock_offset);
     const double travel = printer->GetExtrusionDistance();  // since last reset.
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
