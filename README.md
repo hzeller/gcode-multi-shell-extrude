@@ -158,13 +158,13 @@ then they are all shown nested into each other
 
 ![Matryoshka hilbert][matryoshka-hilbert]
 
-Here a regular screw
+Here a regular screw, 5 nested into each other:
 
      ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -d 5 -t aaabaaabaaab -P -m > out.ps
 
 ![Matryoshka screw][matryoshka-screw]
 
-.. and here 20 screws nested
+.. how about 20 nested screws ?
 
     ./multi-shell-extrude -n 20 -h 10 -p 180 -s 5 -d 5 -t aaabaaabaaab -P -m > out.ps
 
