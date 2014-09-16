@@ -13,7 +13,7 @@
 Polygon PolygonOffset(const Polygon &polygon, double offset) {
   ClipperLib::Path path;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
-    const Point &p = polygon[i];
+    const Point2D &p = polygon[i];
     path.push_back(ClipperLib::IntPoint(100 * p.x, 100 * p.y));
   }
 
@@ -27,7 +27,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset) {
   ClipperLib::Path &cp_solution = solutions[0];
   for (std::size_t i = 0; i < cp_solution.size(); ++i) {
     const ClipperLib::IntPoint &p = cp_solution[i];
-    result.push_back(Point(p.X / 100.0, p.Y / 100.0));
+    result.push_back(Point2D(p.X / 100.0, p.Y / 100.0));
   }
   return result;
 }
