@@ -40,7 +40,9 @@ static int usage(const char *progname) {
           "\t -u <pump>         : Pump up polygon as if the center was not a\n"
           "\t                     dot but a circle of <pump> radius\n"
           "\t -n <number-of-screws> : number of screws to be printed\n"
-          "\t -R <radius-increment> : increment between screws, the clearance.\n"
+          "\t -i <initial-radius>: start offset from start-polygon.\n"
+          "\t -R <radius-increment> : offset-increment between screws, the "
+          "clearance.\n"
           "\t -S <stop-offset>  : EXPERIMENTAL offset to stop screw\n"
           "\t                     around (radius_increment - 0.8)/2 + 0.05\n"
           "\t -l <layer-height> : Height of each layer.\n"
@@ -378,9 +380,9 @@ int main(int argc, char *argv[]) {
     }
     if (x + radius + 5 > machine_limit_x || y + radius + 5 > machine_limit_y) {
       fprintf(stderr, "With currently configured bedsize and printhead-offset, "
-              "only %d screws fit.\n"
+              "only %d screws fit (radius is %.1fmm)\n"
               "Configure your machine constraints with -L <x/y> -o < dx,dy> "
-              "(currently -L %.0f,%.0f -o %.0f,%.0f)\n", i,
+              "(currently -L %.0f,%.0f -o %.0f,%.0f)\n", i, radius,
               machine_limit_x, machine_limit_y, head_offset_x, head_offset_y);
       break;
     }
