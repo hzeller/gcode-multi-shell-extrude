@@ -100,8 +100,11 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
        height += layer_height, angle += rotation_per_layer) {
     prev_state = state;
 
-    // What to print. For lock we're very simple: we just offset the
+    // Experimental. Locking screws do have smaller/larger diameter at their
+    // ends. This goes through the state transitions.
+    // What to print. For locking screw we're very simple: we just offset the
     // polygon, but don't do any transition for now.
+    // TODO: re-arrange polygon to start at same angle.
     switch (state) {
     case START:
       if (do_lock) {
@@ -160,6 +163,8 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
   }
 }
 
+// Read very simple polygon from file: essentially a sequence of x y
+// coordinates.
 Polygon ReadPolygon(const char *filename, double factor) {
   Polygon polygon;
   FILE *in = fopen(filename, "r");
