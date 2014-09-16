@@ -158,6 +158,10 @@ then they are all shown nested into each other
 
 ![Matryoshka hilbert][matryoshka-hilbert]
 
+     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -D sample/snowflake.poly -P -m > out.ps
+
+![Matryoshka Snowflake][matryoshka-snowflake]
+
 Here a regular screw, 5 nested into each other:
 
      ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -d 5 -t aaabaaabaaab -P -m > out.ps
@@ -224,16 +228,17 @@ Have Fun!
 ![Multiple Screws from different prints][multiple-prints]
 
 
-[print]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/print.jpg
-[printrbot]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/printrbot.jpg
-[result]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/result.jpg
-[hilbert-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-screw.jpg
-[hilbert-shells]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/hilbert-shells.jpg
-[multiple-prints]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/multiscrew.jpg
-[postscript-bed-layout]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/postscript-bed-layout.png
-[matryoshka-hilbert]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-hilbert.png
-[matryoshka-screw]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/matryoshka-screw.png
-[many-screws]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/many-screws.png
-[steep-pitch]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/steep-pitch.png
-[orange-blue]: https://github.com/hzeller/gcode-multi-shell-extrude/raw/master/img/orange-blue.png
+[print]: ./img/print.jpg
+[printrbot]: ./img/printrbot.jpg
+[result]: ./img/result.jpg
+[hilbert-screw]: ./img/hilbert-screw.jpg
+[hilbert-shells]: ./img/hilbert-shells.jpg
+[multiple-prints]: ./img/multiscrew.jpg
+[postscript-bed-layout]: ./img/postscript-bed-layout.png
+[matryoshka-hilbert]: ./img/matryoshka-hilbert.png
+[matryoshka-snowflake]: ./img/matryoshka-snowflake.png
+[matryoshka-screw]: ./img/matryoshka-screw.png
+[many-screws]: ./img/many-screws.png
+[steep-pitch]: ./img/steep-pitch.png
+[orange-blue]: ./img/orange-blue.png
 [matryoshka-reference]: http://en.wikipedia.org/wiki/Matryoshka_doll
