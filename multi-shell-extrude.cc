@@ -4,7 +4,6 @@
  */
 
 #include <assert.h>
-#include <getopt.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,49 +16,7 @@
 
 #include "multi-shell-extrude.h"
 #include "printer.h"
-
-static int usage(const char *progname) {
-  fprintf(stderr, "Usage: %s -h <height> [<options>]\n",
-          progname);
-  fprintf(stderr,
-          "Required parameter: -h <height>\n"
-          "\n [ Screw from a string template]\n"
-          "\t -t <template>     : template string, described above\n"
-          "\t                     (default \"AABBBAABBBAABBB\")\n"
-          "\t                   The following options -d and -w work for this:\n"
-          "\t -d <thread-depth> : depth of thread (default: radius/5)\n"
-          "\t -w <twist>        : tWist ratio of angle per radius fraction\n"
-          "\t                     (good range: -0.3...0.3)\n"
-          "\n [ Screw from a polygon data file ]\n"
-          "\t -D <data>         : data file with polygon. Lines with x y "
-          "pairs.\n"
-          "\n [ General parameters ]\n"
-          "\t -h <height>       : Total height to be printed\n"
-          "\t -s <initial-size> : Polygon sizing parameter.\n"
-          "\t                     Means radius if from -t, factor for -D.\n"
-          "\t -u <pump>         : Pump up polygon as if the center was not a\n"
-          "\t                     dot but a circle of <pump> radius\n"
-          "\t -n <number-of-screws> : number of screws to be printed\n"
-          "\t -i <initial-radius>: start offset from start-polygon.\n"
-          "\t -R <radius-increment> : offset-increment between screws, the "
-          "clearance.\n"
-          "\t -S <stop-offset>  : EXPERIMENTAL offset to stop screw\n"
-          "\t                     around (radius_increment - 0.8)/2 + 0.05\n"
-          "\t -l <layer-height> : Height of each layer.\n"
-          "\t -f <feed-rate>    : maximum, in mm/s\n"
-          "\t -T <layer-time>   : min time per layer; dynamically influences -f\n"
-          "\t -p <pitch>        : how many mm height a full screw-turn takes.\n"
-          "\t                     negative for left screw. 0 for straight hull\n"
-          "\t -L <x,y>          : x/y size limit of your printbed.\n"
-          "\t -o <dx,dy>        : dx/dy offset per print. Clearance needed from\n"
-          "\t                     hotend-tip to left and front essentially.\n"
-          "\n [ Output options ]\n"
-          "\t -P                : PostScript output instead of GCode output\n"
-          "\t -m                : For Postscript: show nested (Matryoshka doll "
-          "style)\n");
-
-  return 1;
-}
+#include "config-values.h"
 
 // The total length of distance going through a polygon.
 double CalcPolygonLen(const Polygon &polygon) {
@@ -167,11 +124,11 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
 
 // Read very simple polygon from file: essentially a sequence of x y
 // coordinates.
-Polygon ReadPolygon(const char *filename, double factor) {
+Polygon ReadPolygon(const std::string &filename, double factor) {
   Polygon polygon;
-  FILE *in = fopen(filename, "r");
+  FILE *in = fopen(filename.c_str(), "r");
   if (!in) {
-    fprintf(stderr, "Can't open %s\n", filename);
+    fprintf(stderr, "Can't open %s\n", filename.c_str());
     return polygon;
   }
   char buffer[256];
@@ -214,93 +171,70 @@ int main(int argc, char *argv[]) {
   double start_x = 5;  // Initial edge offset.
   double start_y = 5;
   // Some useful default values.
-  double pitch = 30.0;
-  double layer_height = 0.16;
   double nozzle_radius = 0.4 / 2;
   double filament_radius = 1.75 / 2;
-  double total_height = -1;
-  double machine_limit_x = 150, machine_limit_y = 150;
   int faces = 720;
-  double initial_size = 10.0;
-  double shell_increment = 1.2;
-  double initial_shell = 0;
-  double head_offset_x = 45;
-  double head_offset_y = 45;
-  double feed_mm_per_sec = 100;
-  double min_layer_time = 6;
-  double thread_depth = -1;
   double shell_thickness_factor = 1.9;  // ~2*nozzzle = ~0.8mm shell thickness.
-  int screw_count = 2;
-  double twist = 0.0;
-  double pump = 0.0;
-  bool do_postscript = false;
-  bool matryoshka = false;
-  double lock_offset = -1;
 
-  const char *fun_init = "AABBBAABBBAABBB";
-  const char *data_file = NULL;
+  // Screw from string template
+  StringParam fun_init    ("AABBBAABBBAABBB", "screw-template", 't', "Template string for screw.");
+  FloatParam thread_depth (-1, "thread-depth", 'd',   "Depth of thread, initial-size/5 if negative");
+  FloatParam twist        (0.0, "twist",        0,    "Twist ratio of angle per radius fraction (good -0.3..0.3)");
 
-  int opt;
-  while ((opt = getopt(argc, argv, "t:h:n:s:R:i:d:l:f:p:T:L:o:w:PD:u:mr:S:")) != -1) {
-    switch (opt) {
-    case 't': fun_init = strdup(optarg); break;
-    case 'D': data_file = strdup(optarg); break;
-    case 'h': total_height = atof(optarg); break;
-    case 'n': screw_count = atoi(optarg); break;
-    case 's': initial_size = atof(optarg); break;
-    case 'i': initial_shell = atof(optarg); break;
-    case 'R': shell_increment = atof(optarg); break;
-    case 'S': lock_offset = atof(optarg); break;
-    case 'd': thread_depth = atof(optarg); break;
-    case 'l': layer_height = atof(optarg); break;
-    case 'f': feed_mm_per_sec = atof(optarg); break;
-    case 'T': min_layer_time = atof(optarg); break;
-    case 'w': twist = atof(optarg); break;
-    case 'u': pump = atof(optarg); break;
-    case 'm': matryoshka = true; break;
-    case 'r':
-      fprintf(stderr,
-              "Hello old-time user that knows about this option:\n"
-              "The option -r does not exist anymore. You "
-              "now want to look at -s\n");
-      return 1;
-      break;
-    case 'L':
-      if (2 != sscanf(optarg, "%lf,%lf", &machine_limit_x, &machine_limit_y)) {
-        usage(argv[0]);
-      }
-      break;
-    case 'o':
-      if (2 != sscanf(optarg, "%lf,%lf", &head_offset_x, &head_offset_y)) {
-        usage(argv[0]);
-      }
-      break;
-    case 'p': pitch = atof(optarg); break;
-    case 'P': do_postscript = true; break;
-    default:
-      return usage(argv[0]);
-    }
+  // Screw from polygon file
+  StringParam polygon_file("", "polygon-file", 'D',  "File describing polygon. Files with x y pairs");
+
+  // General Parameters
+  FloatParam total_height (-1,    "height", 'h', "Total height to be printed");
+  FloatParam pitch        (30.0,  "pitch",  'p', "Millimiter height a full turn takes. "
+                           "Negative for left-turning screw; 0 for straight hull.");
+  FloatParam initial_size (10.0, "size",    's', "Polygon sizing parameter. Means radius if from "
+                           "--screw-template, factor for --polygon-file");
+  FloatParam pump         (0.0,   "pump",    0, "Pump polygon as if the center was not a dot, but a circle of this radius");
+  IntParam screw_count    (2,     "number", 'n', "Number of screws to be printed");
+  FloatParam initial_shell(0,     "start-offset", 0, "Initial offset for first polygon");
+  FloatParam shell_increment(1.2, "offset", 'R', "Offset increment between screws - the clearance");
+  FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
+  FloatParam feed_mm_per_sec(100, "feed-rate",    'f', "maximum, in mm/s");
+  FloatParam min_layer_time(8,    "layer-time",   'T', "Min time per layer; upper bound for feed-rate");
+  FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
+  FloatPairParam machine_limit(std::make_pair(150.0f,150.0f), "bed-size",    'L',  "x/y size limit of your printbed.");
+  FloatPairParam head_offset(std::make_pair(45.0f,45.0f),     "head-offset", 'o', "dx/dy offset per print.");
+
+  // Output options
+  BoolParam do_postscript(false, "postscript", 'P', "PostScript output instead of GCode output");
+  BoolParam matryoshka(false,    "matryoshka", 'm', "For PostScript: show nested (Matryoshka doll style)");
+
+  if (!SetParametersFromCommandline(argc, argv)) {
+    return ParameterUsage(argv[0]);
   }
 
-  if (total_height < 0)
-    return usage(argv[0]);
+  if (total_height < 0) {
+    fprintf(stderr, "\n--height needs to be set\n\n");
+    return ParameterUsage(argv[0]);
+  }
 
   if (thread_depth < 0)
     thread_depth = initial_size / 5;
 
   if (matryoshka && !do_postscript) {
     fprintf(stderr, "Matryoshka mode only valid with postscript\n");
-    return usage(argv[0]);
+    return ParameterUsage(argv[0]);
   }
 
-  matryoshka &= do_postscript;   // Anyway, let's formulate it also this way
+  double machine_limit_x = machine_limit.get().first;
+  double machine_limit_y = machine_limit.get().second;
+  double head_offset_x = head_offset.get().first;
+  double head_offset_y = head_offset.get().second;
+
+  matryoshka = matryoshka & do_postscript;   // Formulate it this way.
 
   // Get polygon we'll be working on. Add pump if needed.
   const Polygon base_polygon =
-    RadialPumpPolygon(data_file
-                      ? ReadPolygon(data_file, initial_size)
-                      : RotationalPolygon(fun_init, initial_size,
-                                          thread_depth, twist),
+    RadialPumpPolygon(polygon_file.get().empty()
+                      ? RotationalPolygon(fun_init.get().c_str(), initial_size,
+                                          thread_depth, twist)
+                      : ReadPolygon(polygon_file, initial_size),
                       pump);
 
   if (base_polygon.empty()) {
@@ -324,7 +258,8 @@ int main(int argc, char *argv[]) {
 
   Printer *printer = NULL;
   if (do_postscript) {
-    total_height = std::min(total_height, 3 * layer_height); // not needed more.
+    total_height = std::min(total_height.get(),
+                            3 * layer_height); // not needed more.
     // no move lines w/ Matryoshka
     printer = CreatePostscriptPrinter(!matryoshka,
                                       shell_thickness_factor * 2*nozzle_radius);
@@ -340,18 +275,22 @@ int main(int argc, char *argv[]) {
     printf("%s ", argv[i]);
   printf("\n");
   printer->Comment("\n");
-  if (data_file) {
-    printer->Comment("Polygon from datafile '%s'\n", data_file);
+  if (!polygon_file.get().empty()) {
+    printer->Comment("Polygon from polygon-file '%s'\n",
+                     polygon_file.get().c_str());
   } else {
-    printer->Comment("Polygon from screw template '%s'\n", fun_init);
+    printer->Comment("Polygon from screw template '%s'\n",
+                     fun_init.get().c_str());
   }
   printer->Comment("size=%.1fmm h=%.1fmm n=%d (shell-increment=%.1fmm)\n",
-                   initial_size, total_height, screw_count, shell_increment);
+                   initial_size.get(), total_height.get(),
+                   screw_count.get(), shell_increment.get());
   printer->Comment("thread-depth=%.1fmm faces=%d\n",
-                  thread_depth, faces);
+                   thread_depth.get(), faces);
   printer->Comment("feed=%.1fmm/s (maximum; layer time at least %.1f s)\n",
-                  feed_mm_per_sec, min_layer_time);
-  printer->Comment("pitch=%.1fmm/turn layer-height=%.3f\n", pitch, layer_height);
+                   feed_mm_per_sec.get(), min_layer_time.get());
+  printer->Comment("pitch=%.1fmm/turn layer-height=%.3f\n",
+                   pitch.get(), layer_height.get());
   printer->Comment("machine limits: bed: (%.0f/%.0f):  "
                   "head-offset: (%.0f,%.0f)\n",
                   machine_limit_x, machine_limit_y,
@@ -387,8 +326,8 @@ int main(int argc, char *argv[]) {
       break;
     }
     printer->MoveTo(x, y, i > 0 ? total_height + 5 : 5);
-    double layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
-    layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec);
+    float layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
+    layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec.get());
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",

@@ -1,7 +1,7 @@
 CXXFLAGS=-Wall -O2
 LIBS=-lm
-OBJECTS=multi-shell-extrude.o rotational-polygon.o polygon-offset.o printer.o \
-        third_party/clipper.o
+OBJECTS=multi-shell-extrude.o rotational-polygon.o polygon-offset.o \
+	printer.o config-values.o third_party/clipper.o
 
 multi-shell-extrude: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)

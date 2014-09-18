@@ -25,44 +25,33 @@ Compile it first
 Now you can use it; here a little synopsis that you get if you invoke the program
 without parameters.
 
-     Usage: ./multi-shell-extrude -h <height> [<options>]
-     Required parameter: -h <height>
+     usage: ./multi-shell-extrude [options]
+     Synopsis:
+     --- Long option           [short]: help ---
+      --screw-template <value> [-t]: Template string for screw. (default: 'AABBBAABBBAABBB')
+      --thread-depth <value>   [-d]: Depth of thread, initial-size/5 if negative (default: '-1.00')
+      --twist <value>              : Twist ratio of angle per radius fraction (good -0.3..0.3) (default: '0.00')
+      --polygon-file <value>   [-D]: File describing polygon. Files with x y pairs (default: '')
+      --height <value>         [-h]: Total height to be printed (default: '-1.00')
+      --pitch <value>          [-p]: Millimiter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
+      --size <value>           [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
+      --pump <value>               : Pump polygon as if the center was not a dot, but a circle of this radius (default: '0.00')
+      --number <value>         [-n]: Number of screws to be printed (default: '2')
+      --start-offset <value>       : Initial offset for first polygon (default: '0.00')
+      --offset <value>         [-R]: Offset increment between screws - the clearance (default: '1.20')
+      --layer-height <value>   [-l]: Height of each layer (default: '0.16')
+      --feed-rate <value>      [-f]: maximum, in mm/s (default: '100.00')
+      --layer-time <value>     [-T]: Min time per layer; upper bound for feed-rate (default: '8.00')
+      --lock-offset <value>        : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
+      --bed-size <value>       [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
+      --head-offset <value>    [-o]: dx/dy offset per print. (default: '45.00,45.00')
+      --postscript <value>     [-P]: PostScript output instead of GCode output (default: 'off')
+      --matryoshka <value>     [-m]: For PostScript: show nested (Matryoshka doll style) (default: 'off')
 
-      [ Screw from a string template]
-         -t <template>     : template string, described above
-                             (default "AABBBAABBBAABBB")
-                           The following options -d and -w work for this:
-         -d <thread-depth> : depth of thread (default: radius/5)
-         -w <twist>        : tWist ratio of angle per radius fraction
-                             (good range: -0.3...0.3)
+Some of the long options have short equivalents for convenient short invocations.
 
-      [ Screw from a polygon data file ]
-         -D <data>         : data file with polygon. Lines with x y pairs.
-
-      [ General parameters ]
-         -h <height>       : Total height to be printed
-         -s <initial-size> : Polygon sizing parameter.
-                             Means radius if from -t, factor for -D.
-         -u <pump>         : Pump up polygon as if the center was not a
-                             dot but a circle of <pump> radius
-         -n <number-of-screws> : number of screws to be printed
-         -R <radius-increment> : increment between screws, the clearance.
-         -l <layer-height> : Height of each layer.
-         -f <feed-rate>    : maximum, in mm/s
-         -T <layer-time>   : min time per layer; dynamically influences -f
-         -p <pitch>        : how many mm height a full screw-turn takes.
-                             negative for left screw. 0 for straight hull
-         -L <x,y>          : x/y size limit of your printbed.
-         -o <dx,dy>        : dx/dy offset per print. Clearance needed from
-                             hotend-tip to left and front essentially.
-
-      [ Output options ]
-         -P                : PostScript output instead of GCode output
-         -m                : For Postscript: show nested (Matryoshka doll style)
-
-(TODO: make these long-options. The short-options are not really descriptive)
-
-Output (GCode or PostScript) is on stdout.
+Output (GCode or PostScript) is on stdout, so you typically would redirect
+the output to a file.
 
 See sample invocations below in the Gallery.
 
@@ -103,9 +92,9 @@ is equivalent to `AAZZZAAZZZ`
 #### Twist
 
 
-The experimental `-w` parameter allows to give things a little twist:
+The `--twist` parameter allows to give things a little twist:
 
-      ./multi-shell-extrude -p 120 -d 12 -h 60 -w 0.2 -t ABABABABAB > twist.gcode
+      ./multi-shell-extrude -p 120 -d 12 -h 60 --twist 0.2 -t ABABABABAB > twist.gcode
 
 Note, we are giving a relatively high pitch value to manage the overlaps
 between layers - see below in PostScript output an example.
@@ -133,7 +122,7 @@ by the thickness of the line in the postscript output.
      $ okular out.ps &    # start postscript viewer
      # now play around with the options and watch the changes. In the following
      # example, we set the pitch too steep, so we see overlaps
-     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 -w 0.3 -t BAAAABAAAABAAAA -P > out.ps
+     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 --twist 0.3 -t BAAAABAAAABAAAA -P > out.ps
 
 We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
 The layers of the 3D print now already miss the corresponding previous
@@ -142,8 +131,8 @@ following PostScript output, so we don't mess up a 3D print.
 
 ![Steep pitch][steep-pitch]
 
-To fix, either increase pitch `-p` (number of mm height for a full turn) or
-decrease layer-height `-l`.
+To fix, either increase pitch `-p` (or `--pitch`) (number of mm height for a
+full turn) or decrease layer-height `-l` (`--layer-height`)
 
 The usual view displays exactly the layout on the print-bed with all screws
 spread out.
@@ -210,8 +199,8 @@ In general, to spread over multiple prints, you can use the initial shell value
 
 The resulting screws nest together nicely with 1.2mm distance:
 
-     ./multi-shell-extrude -n 3 -i -1.2 -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 -i  0   -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 --start-offset=-1.2 -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3 --start-offset=0   -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
 
 ![Print Plan hilbert][orange-blue]
 ![Hilbert Screws][hilbert-screw]
