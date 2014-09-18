@@ -255,6 +255,11 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "Polygon empty\n");
     return 1;
   }
+  if (base_polygon.size() < 3) {
+    fprintf(stderr, "Polygon is a %sgon :) Need at least 3 faces.\n",
+            base_polygon.size() == 1 ? "Mono" : "Duo");
+    return 1;
+  }
 
   if (matryoshka) {
     Polygon biggst_polygon
