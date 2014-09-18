@@ -132,12 +132,25 @@ Polygon ReadPolygon(const std::string &filename, double factor) {
     return polygon;
   }
   char buffer[256];
+  int line = 0;
   while (fgets(buffer, sizeof(buffer), in)) {
+    ++line;
+    const char *start = buffer;
+    while (*start && isspace(*start))
+      start++;
+    if (*start == '\0' || *start == '#')
+      continue;
     Point2D p;
-    if (sscanf(buffer, "%lf %lf\n", &p.x, &p.y) == 2) {
+    if (sscanf(start, "%lf %lf", &p.x, &p.y) == 2) {
       p.x *= factor;
       p.y *= factor;
       polygon.push_back(p);
+    } else {
+      for (char *end = buffer + strlen(buffer) - 1; isspace(*end); end--) {
+        *end = '\0';
+      }
+      fprintf(stderr, "%s:%d not a comment and not coordinates: '%s'\n",
+              filename.c_str(), line, start);
     }
   }
   fclose(in);
