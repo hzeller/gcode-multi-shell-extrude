@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   if (base_polygon.size() < 3) {
-    fprintf(stderr, "Polygon is a %sgon :) Need at least 3 faces.\n",
+    fprintf(stderr, "Polygon is a %sgon :) Need at least 3 vertices.\n",
             base_polygon.size() == 1 ? "Mono" : "Duo");
     return 1;
   }
