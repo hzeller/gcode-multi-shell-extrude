@@ -215,7 +215,7 @@ right offsets.
 The resulting screws nest together nicely with 1.2mm distance:
 
      ./multi-shell-extrude -n 3 --start-offset=-1.2 --offset=2.4 --height=60 --pitch=180 --size=3.5 --polygon-file sample/hilbert.poly --bed-size=220,220 > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 --start-offset=0    --offset=2.4 --height 60 --pitch=180 --size=3.5 --polygon-file sample/hilbert.poly --bed-size=220,220 > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 --start-offset=0    --offset=2.4 --height=60 --pitch=180 --size=3.5 --polygon-file sample/hilbert.poly --bed-size=220,220 > /tmp/blue.gcode
 
 ![Print Plan hilbert][orange-blue]
 ![Hilbert Screws][hilbert-screw]
