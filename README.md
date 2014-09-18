@@ -53,7 +53,7 @@ without parameters.
 
       [ Output Options ]
       --postscript <value>     [-P]: PostScript output instead of GCode output (default: 'off')
-      --matryoshka <value>     [-m]: For PostScript: show nested (Matryoshka doll style) (default: 'off')
+      --nested <value>             : For PostScript: show nested (Matryoshka doll style) (default: 'off')
 
 Some of the long options have short equivalents for convenient short invocations.
 
@@ -147,27 +147,27 @@ spread out.
 
 ![Postscript bed view][postscript-bed-layout]
 
-If you want to see how the screws nest, add the `-m` parameter
+If you want to see how the screws nest, add the `--nested` parameter
 (like [Matryoshka][matryoshka-reference], the nested doll),
 then they are all shown nested into each other
 
-     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=3.5 --polygon-file=sample/hilbert.poly -P -m > out.ps
+     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=3.5 --polygon-file=sample/hilbert.poly -P --nested > out.ps
 
 ![Matryoshka hilbert][matryoshka-hilbert]
 
-     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --polygon-file sample/snowflake.poly -P -m > out.ps
+     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --polygon-file sample/snowflake.poly -P --nested > out.ps
 
 ![Matryoshka Snowflake][matryoshka-snowflake]
 
 Here a regular screw, 5 nested into each other:
 
-     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --thread-depth=5 -t aaabaaabaaab -P -m > out.ps
+     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --thread-depth=5 -t aaabaaabaaab -P --nested > out.ps
 
 ![Matryoshka screw][matryoshka-screw]
 
 .. how about 20 nested screws ?
 
-    ./multi-shell-extrude -n 20 --height=10 --pitch=180 --size=5 --thread-depth=5 -t aaabaaabaaab -P -m > out.ps
+    ./multi-shell-extrude -n 20 --height=10 --pitch=180 --size=5 --thread-depth=5 -t aaabaaabaaab -P --nested > out.ps
 
 ![Many screws][many-screws]
 

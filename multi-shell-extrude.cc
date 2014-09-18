@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
   // Output options
   ParamHeadline h4("Output Options");
   BoolParam do_postscript(false, "postscript", 'P', "PostScript output instead of GCode output");
-  BoolParam matryoshka(false,    "matryoshka", 'm', "For PostScript: show nested (Matryoshka doll style)");
+  BoolParam matryoshka(false,    "nested",      0, "For PostScript: show nested (Matryoshka doll style)");
 
   if (!SetParametersFromCommandline(argc, argv)) {
     return ParameterUsage(argv[0]);
