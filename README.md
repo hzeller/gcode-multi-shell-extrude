@@ -38,7 +38,7 @@ without parameters.
 
       [ General Parameters ]
       --height <value>         [-h]: Total height to be printed (default: '-1.00')
-      --pitch <value>          [-p]: Millimiter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
+      --pitch <value>          [-p]: Millimeter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
       --size <value>           [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
       --pump <value>               : Pump polygon as if the center was not a dot, but a circle of this radius (default: '0.00')
       --number <value>         [-n]: Number of screws to be printed (default: '2')

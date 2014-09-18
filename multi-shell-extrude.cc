@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 
   ParamHeadline h3("General Parameters");
   FloatParam total_height (-1,    "height", 'h', "Total height to be printed");
-  FloatParam pitch        (30.0,  "pitch",  'p', "Millimiter height a full turn takes. "
+  FloatParam pitch        (30.0,  "pitch",  'p', "Millimeter height a full turn takes. "
                            "Negative for left-turning screw; 0 for straight hull.");
   FloatParam initial_size (10.0, "size",    's', "Polygon sizing parameter. Means radius if from "
                            "--screw-template, factor for --polygon-file");
