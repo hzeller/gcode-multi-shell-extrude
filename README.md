@@ -149,8 +149,7 @@ spread out.
 ![Postscript bed view][postscript-bed-layout]
 
 If you want to see how the screws nest, add the `--nested` parameter
-(like [Matryoshka][matryoshka-reference], the nested doll),
-then they are all shown nested into each other
+then they are all shown centered around one point:
 
      ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=3.5 --polygon-file=sample/hilbert.poly -P --nested > out.ps
 
@@ -240,4 +239,4 @@ Have Fun!
 [many-screws]: ./img/many-screws.png
 [steep-pitch]: ./img/steep-pitch.png
 [orange-blue]: ./img/orange-blue.png
-[matryoshka-reference]: http://en.wikipedia.org/wiki/Matryoshka_doll
+
