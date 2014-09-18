@@ -299,14 +299,15 @@ int main(int argc, char *argv[]) {
   if (!polygon_file.get().empty()) {
     printer->Comment("Polygon from polygon-file '%s'\n",
                      polygon_file.get().c_str());
+    printer->Comment("size-factor=%.1f\n", initial_size.get());
   } else {
     printer->Comment("Polygon from screw template '%s'\n",
                      fun_init.get().c_str());
+    printer->Comment("thread-depth=%.1fmm size=%.1fmm (radius)\n",
+                     thread_depth.get(), initial_size.get());
   }
-  printer->Comment("size=%.1fmm h=%.1fmm n=%d (shell-increment=%.1fmm)\n",
-                   initial_size.get(), total_height.get(),
-                   screw_count.get(), shell_increment.get());
-  printer->Comment("thread-depth=%.1fmm\n", thread_depth.get());
+  printer->Comment("h=%.1fmm n=%d (shell-increment=%.1fmm)\n",
+                   total_height.get(), screw_count.get(), shell_increment.get());
   printer->Comment("feed=%.1fmm/s (maximum; layer time at least %.1f s)\n",
                    feed_mm_per_sec.get(), min_layer_time.get());
   printer->Comment("pitch=%.1fmm/turn layer-height=%.3f\n",
