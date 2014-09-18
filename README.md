@@ -84,8 +84,8 @@ Screw description
 
 (TODO: describe better)
 
-Template (flag `-t`) describes the shape. The letters in that string
-describe the screw depth for a full turn.
+Template (flag `--screw-template` or `-t`) describes the shape. The letters in
+that string describe the screw depth for a full turn.
 A template `AAZZZAAZZZAAZZZ` is a screw with three parallel threads,
 with 'inner parts' (the one with the lower letter 'A') being 2/3
 the width of the outer parts. `AAZZZ` would have one thread per turn.
@@ -101,7 +101,7 @@ is equivalent to `AAZZZAAZZZ`
 
 The `--twist` parameter allows to give things a little twist:
 
-      ./multi-shell-extrude -p 120 -d 12 -h 60 --twist 0.2 -t ABABABABAB > twist.gcode
+      ./multi-shell-extrude --pitch=120 --thread-depth=12 --height=60 --twist=0.2 --screw-template=ABABABABAB > twist.gcode
 
 Note, we are giving a relatively high pitch value to manage the overlaps
 between layers - see below in PostScript output an example.
@@ -117,19 +117,20 @@ PostScript output
 -----------------
 
 While playing with the options, it is nicer to first look at how it would look
-on the printbed. So there is the option `-P` to output postscript instead of
-GCode. If you use a PostScript viewer such as `okular` that re-loads the content
-whenever the file changes, you can play with the options and see how things
-change. The first three layers of the spiral are shown, which gives an
+on the printbed. So there is the option `-P` (or `--postscript`) to output
+postscript instead of GCode. If you use a PostScript viewer such as `okular`
+that re-loads the content whenever the file changes, you can play with the
+options and see how things change.
+The first three layers of the spiral are shown, which gives an
 indication if the filament would stick - if the rotation is too quick, you see
 separate overlapping lines. The thickness of the shell is roughly represented
 by the thickness of the line in the postscript output.
 
-     $ ./multi-shell-extrude -h 5 -P > out.ps
+     $ ./multi-shell-extrude --height=5 -P > out.ps
      $ okular out.ps &    # start postscript viewer
      # now play around with the options and watch the changes. In the following
      # example, we set the pitch too steep, so we see overlaps
-     $ ./multi-shell-extrude -n 1 -p 10 -h 5 -d 10 --twist 0.3 -t BAAAABAAAABAAAA -P > out.ps
+     $ ./multi-shell-extrude -n 1 --pitch=10 --height=5 --thread-depth=10 --twist=0.3 -t BAAAABAAAABAAAA -P > out.ps
 
 We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
 The layers of the 3D print now already miss the corresponding previous
@@ -150,23 +151,23 @@ If you want to see how the screws nest, add the `-m` parameter
 (like [Matryoshka][matryoshka-reference], the nested doll),
 then they are all shown nested into each other
 
-     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 3.5 -D sample/hilbert.poly -P -m > out.ps
+     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=3.5 --polygon-file=sample/hilbert.poly -P -m > out.ps
 
 ![Matryoshka hilbert][matryoshka-hilbert]
 
-     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -D sample/snowflake.poly -P -m > out.ps
+     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --polygon-file sample/snowflake.poly -P -m > out.ps
 
 ![Matryoshka Snowflake][matryoshka-snowflake]
 
 Here a regular screw, 5 nested into each other:
 
-     ./multi-shell-extrude -n 5 -h 10 -p 180 -s 10 -d 5 -t aaabaaabaaab -P -m > out.ps
+     ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --thread-depth=5 -t aaabaaabaaab -P -m > out.ps
 
 ![Matryoshka screw][matryoshka-screw]
 
 .. how about 20 nested screws ?
 
-    ./multi-shell-extrude -n 20 -h 10 -p 180 -s 5 -d 5 -t aaabaaabaaab -P -m > out.ps
+    ./multi-shell-extrude -n 20 --height=10 --pitch=180 --size=5 --thread-depth=5 -t aaabaaabaaab -P -m > out.ps
 
 ![Many screws][many-screws]
 
@@ -179,14 +180,14 @@ Gallery and Examples
 
 This result was created with this commandline:
 
-    ./multi-shell-extrude -l 0.12 -d 2 -s 10 -R 1.5 -n 4 -h 60 -L 305,305 -o 50,50 > out.gcode
+    ./multi-shell-extrude --layer-height=0.12 --thread-depth=2 --size=10 --offset=1.5 -n 4 --height=60 --bed-size=305,305 --head-offset=50,50 > out.gcode
 
 Printed twice with different filaments.
 
 ![Printrbot][printrbot]
 (Printrbot Simple Metal)
 
-`./multi-shell-extrude -l 0.12 -d 2 -s 16 -R 1.5 -n 2 -h 60 -L150,150 -o50,50 > /tmp/screw-printrbot.gcode`
+`./multi-shell-extrude --layer-height=0.12 --thread-depth=2 --size=16 --offset=1.5 -n 2 --height=60 --bed-size=150,150 --head-offset=50,50 > /tmp/screw-printrbot.gcode`
 
 ### Polygon from data file
 
@@ -194,9 +195,9 @@ Here, we generate two different colors in two prints. We want to print the
 hilbert example from the `sample/` directory. The shells should be 1.2mm apart.
 We want them alternating in color, so we do to prints with different colors
 with each 2.4mm apart. For that, we give both the shell increment value
-`-R 2.4`, but with different start values with the `-i` option.
-The blue print starts with `-i 0`, so no initial offset. The
-orange print starts with `-i -1.2` (yes you can give negative values, then a polygon is constructed that fits on the _inside_).
+`--offset 2.4`, but with different start values with the `--start-offset` option.
+The blue print starts with `--start-offset=0`, so no initial offset. The
+orange print starts with `--start-offset=-1.2` (yes you can give negative values, then a polygon is constructed that fits on the _inside_).
 
 Now orange prints the offsets [ -1.2mm, 1.2mm, 3.6mm ], while blue
 prints [ 0mm, 2.4mm, 4.8mm ].
@@ -206,8 +207,8 @@ In general, to spread over multiple prints, you can use the initial shell value
 
 The resulting screws nest together nicely with 1.2mm distance:
 
-     ./multi-shell-extrude -n 3 --start-offset=-1.2 -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/orange.gcode
-     ./multi-shell-extrude -n 3 --start-offset=0   -R 2.4 -h 60 -p 180 -L220,220 -s 3.5 -D sample/hilbert.poly > /tmp/blue.gcode
+     ./multi-shell-extrude -n 3 --start-offset=-1.2 --offset=2.4 --height=60 --pitch=180 --size=3.5 --polygon-file sample/hilbert.poly --bed-size=220,220 > /tmp/orange.gcode
+     ./multi-shell-extrude -n 3 --start-offset=0    --offset=2.4 --height 60 --pitch=180 --size=3.5 --polygon-file sample/hilbert.poly --bed-size=220,220 > /tmp/blue.gcode
 
 ![Print Plan hilbert][orange-blue]
 ![Hilbert Screws][hilbert-screw]

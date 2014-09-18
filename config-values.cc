@@ -129,24 +129,27 @@ bool SetParametersFromCommandline(int argc, char *argv[]) {
 
   std::string optstring;
   struct option *long_options = new option [ sRegisteredParameters->size() + 1 ];
+  int opt_idx = 0;
   for (size_t i = 0; i < sRegisteredParameters->size(); ++i) {
     const Parameter *const p = (*sRegisteredParameters)[i];
-    if (p->option_name == NULL && p->option_char == 0)
+    if (p->option_name == NULL && p->option_char == 0) {
       continue;
+    }
     if (p->option_char != 0) {
       optstring.append(1, p->option_char);
       if (p->RequiresValue()) optstring.append(1, ':');
     }
-    long_options[i].name = p->option_name;
-    long_options[i].has_arg = p->RequiresValue() ? 1 : 2;
-    long_options[i].flag = NULL;
-    long_options[i].val = i + 256;
+    struct option *opt = &long_options[opt_idx++];
+    opt->name = p->option_name;
+    opt->has_arg = p->RequiresValue() ? 1 : 2;
+    opt->flag = NULL;
+    opt->val = i + 256;
   }
   const char *optstr = optstring.c_str();
   bool success = true;
   int opt;
-  int opt_idx = 0;
-  while ((opt = getopt_long(argc, argv, optstr, long_options, &opt_idx)) >= 0) {
+  int arg_idx = 0;
+  while ((opt = getopt_long(argc, argv, optstr, long_options, &arg_idx)) >= 0) {
     if (opt == '?') {
       success = false;
       break;
