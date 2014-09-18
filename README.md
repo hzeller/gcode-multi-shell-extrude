@@ -62,15 +62,15 @@ the output to a file.
 
 See sample invocations below in the Gallery.
 
-Make sure to give the machine limits of your particular machine with the `-L` and
-`-o` option to get the most screws on your bed.
+Make sure to give the machine limits of your particular machine with
+the `--bed-size` and `--head-offset` option to get the most screws on your bed.
 
 Each shell is extruded separately in a single spiral ('vase'-like) run, so that
 there is no seam between layers. Multiple shells can be printed on the same bed:
 each vase is printed to its full height, then the next one is printed next to
 it. To avoid physical collisions, they are printed diagonally so that the
-printhead does not touch the already printed one (Use the `-o` option to configure
-the needed clearance).
+printhead does not touch the already printed one (Use the `--head-offset` option
+to configure the needed clearance).
 
 ![Print diagonally][print]
 (Type-A Machine Series 1 2014)
@@ -132,7 +132,8 @@ by the thickness of the line in the postscript output.
      # example, we set the pitch too steep, so we see overlaps
      $ ./multi-shell-extrude -n 1 --pitch=10 --height=5 --thread-depth=10 --twist=0.3 -t BAAAABAAAABAAAA -P > out.ps
 
-We deliberately chose a very steep pitch here (`-p`; here full turn in 10mm).
+We deliberately chose a very steep pitch here (`--pitch`; here full turn in
+10mm).
 The layers of the 3D print now already miss the corresponding previous
 layer -- they are not overlapping sufficiently anymore. We can see this in the
 following PostScript output, so we don't mess up a 3D print.
@@ -203,7 +204,8 @@ Now orange prints the offsets [ -1.2mm, 1.2mm, 3.6mm ], while blue
 prints [ 0mm, 2.4mm, 4.8mm ].
 
 In general, to spread over multiple prints, you can use the initial shell value
-`-i` together with the radius increment `-R` to generate the right offsets.
+`--start-offset` together with the offset increment `--offset` to generate the
+right offsets.
 
 The resulting screws nest together nicely with 1.2mm distance:
 
