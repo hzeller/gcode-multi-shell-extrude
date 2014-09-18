@@ -102,6 +102,11 @@ int ParameterUsage(const char *progname) {
        it != sRegisteredParameters->end(); ++it) {
     int indent = kIndentBetweenOptionAndHelp;
     const Parameter *const p = *it;
+    if (p->option_name == NULL && p->option_char == 0) {
+      // This is a headline.
+      fprintf(stderr, "\n [ %s ]\n", p->helptext);
+      continue;
+    }
     if (p->option_name) {
       fprintf(stderr, "    --%s <value> ",
               p->option_name);
@@ -126,6 +131,8 @@ bool SetParametersFromCommandline(int argc, char *argv[]) {
   struct option *long_options = new option [ sRegisteredParameters->size() + 1 ];
   for (size_t i = 0; i < sRegisteredParameters->size(); ++i) {
     const Parameter *const p = (*sRegisteredParameters)[i];
+    if (p->option_name == NULL && p->option_char == 0)
+      continue;
     if (p->option_char != 0) {
       optstring.append(1, p->option_char);
       if (p->RequiresValue()) optstring.append(1, ':');

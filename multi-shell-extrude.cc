@@ -176,15 +176,15 @@ int main(int argc, char *argv[]) {
   int faces = 720;
   double shell_thickness_factor = 1.9;  // ~2*nozzzle = ~0.8mm shell thickness.
 
-  // Screw from string template
+  ParamHeadline h1("Screw-data from template");
   StringParam fun_init    ("AABBBAABBBAABBB", "screw-template", 't', "Template string for screw.");
   FloatParam thread_depth (-1, "thread-depth", 'd',   "Depth of thread, initial-size/5 if negative");
   FloatParam twist        (0.0, "twist",        0,    "Twist ratio of angle per radius fraction (good -0.3..0.3)");
 
-  // Screw from polygon file
+  ParamHeadline h2("Screw-data from polygon file");
   StringParam polygon_file("", "polygon-file", 'D',  "File describing polygon. Files with x y pairs");
 
-  // General Parameters
+  ParamHeadline h3("General Parameters");
   FloatParam total_height (-1,    "height", 'h', "Total height to be printed");
   FloatParam pitch        (30.0,  "pitch",  'p', "Millimiter height a full turn takes. "
                            "Negative for left-turning screw; 0 for straight hull.");
@@ -202,6 +202,7 @@ int main(int argc, char *argv[]) {
   FloatPairParam head_offset(std::make_pair(45.0f,45.0f),     "head-offset", 'o', "dx/dy offset per print.");
 
   // Output options
+  ParamHeadline h4("Output Options");
   BoolParam do_postscript(false, "postscript", 'P', "PostScript output instead of GCode output");
   BoolParam matryoshka(false,    "matryoshka", 'm', "For PostScript: show nested (Matryoshka doll style)");
 

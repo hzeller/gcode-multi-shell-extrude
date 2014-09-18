@@ -37,6 +37,17 @@ public:
   const char *const helptext;
 };
 
+// Fake parameter - placeholder for a headline displayed in list
+// of parameters.
+class ParamHeadline : public Parameter {
+public:
+  ParamHeadline(const char *title) : Parameter(NULL, 0, title) {}
+  virtual bool FromString(const char *s) { return false; }
+  virtual std::string ToString() const { return ""; }
+  virtual bool RequiresValue() const { return false; }
+};
+#define ParamHeadline(title) char need_to_use_ParamHeadline_with_instance[-1]
+
 template <class T> class TypedParameter : public Parameter {
 public:
   TypedParameter(T default_value, const char *option_name,

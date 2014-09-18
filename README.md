@@ -28,10 +28,15 @@ without parameters.
      usage: ./multi-shell-extrude [options]
      Synopsis:
      --- Long option           [short]: help ---
+     [ Screw-data from template ]
       --screw-template <value> [-t]: Template string for screw. (default: 'AABBBAABBBAABBB')
       --thread-depth <value>   [-d]: Depth of thread, initial-size/5 if negative (default: '-1.00')
       --twist <value>              : Twist ratio of angle per radius fraction (good -0.3..0.3) (default: '0.00')
+
+      [ Screw-data from polygon file ]
       --polygon-file <value>   [-D]: File describing polygon. Files with x y pairs (default: '')
+
+      [ General Parameters ]
       --height <value>         [-h]: Total height to be printed (default: '-1.00')
       --pitch <value>          [-p]: Millimiter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
       --size <value>           [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
@@ -45,6 +50,8 @@ without parameters.
       --lock-offset <value>        : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
       --bed-size <value>       [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
       --head-offset <value>    [-o]: dx/dy offset per print. (default: '45.00,45.00')
+
+      [ Output Options ]
       --postscript <value>     [-P]: PostScript output instead of GCode output (default: 'off')
       --matryoshka <value>     [-m]: For PostScript: show nested (Matryoshka doll style) (default: 'off')
 
