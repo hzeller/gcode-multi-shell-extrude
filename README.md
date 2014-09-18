@@ -159,6 +159,12 @@ then they are all shown centered around one point:
 
 ![Matryoshka Snowflake][matryoshka-snowflake]
 
+Spiral star 6, six of them. With size point six. Starting at offset -2:
+
+    ./multi-shell-extrude --polygon-file sample/SpiralStar6.poly -h 10 -n 6 --start-offset=-2 --size 0.6 -p 0 --nested -P > out.ps
+
+![Spiral Star 6][matryoshka-spiral-star]
+
 Here a regular screw, 5 nested into each other:
 
      ./multi-shell-extrude -n 5 --height=10 --pitch=180 --size=10 --thread-depth=5 -t aaabaaabaaab -P --nested > out.ps
@@ -236,6 +242,7 @@ Have Fun!
 [matryoshka-hilbert]: ./img/matryoshka-hilbert.png
 [matryoshka-snowflake]: ./img/matryoshka-snowflake.png
 [matryoshka-screw]: ./img/matryoshka-screw.png
+[matryoshka-spiral-star]: ./img/matryoshka-spiral-star-6.png
 [many-screws]: ./img/many-screws.png
 [steep-pitch]: ./img/steep-pitch.png
 [orange-blue]: ./img/orange-blue.png
