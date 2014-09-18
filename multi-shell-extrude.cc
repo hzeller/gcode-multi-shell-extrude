@@ -183,11 +183,7 @@ double GetRadius(const Polygon &polygon) {
 int main(int argc, char *argv[]) {
   double start_x = 5;  // Initial edge offset.
   double start_y = 5;
-  // Some useful default values.
-  double nozzle_radius = 0.4 / 2;
-  double filament_radius = 1.75 / 2;
   int faces = 720;
-  double shell_thickness_factor = 1.9;  // ~2*nozzzle = ~0.8mm shell thickness.
 
   ParamHeadline h1("Screw-data from template");
   StringParam fun_init    ("AABBBAABBBAABBB", "screw-template", 't', "Template string for screw.");
@@ -210,6 +206,9 @@ int main(int argc, char *argv[]) {
   FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
   FloatParam feed_mm_per_sec(100, "feed-rate",    'f', "maximum, in mm/s");
   FloatParam min_layer_time(8,    "layer-time",   'T', "Min time per layer; upper bound for feed-rate");
+  FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
+  FloatParam filament_diameter(1.75, "filament-diameter", 0, "Diameter of filament");
+  FloatParam shell_thickness(0.8, "shell-thickness", 0, "Thickness of shell");
   FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
   FloatPairParam machine_limit(std::make_pair(150.0f,150.0f), "bed-size",    'L',  "x/y size limit of your printbed.");
   FloatPairParam head_offset(std::make_pair(45.0f,45.0f),     "head-offset", 'o', "dx/dy offset per print.");
@@ -236,10 +235,14 @@ int main(int argc, char *argv[]) {
     return ParameterUsage(argv[0]);
   }
 
+  // Calculated values from input parameters.
+  const double nozzle_radius = nozzle_diameter / 2;
+  const double filament_radius = filament_diameter / 2;
+  const double shell_thickness_factor = shell_thickness / nozzle_diameter;
+  const double head_offset_x = head_offset.get().first;
+  const double head_offset_y = head_offset.get().second;
   double machine_limit_x = machine_limit.get().first;
   double machine_limit_y = machine_limit.get().second;
-  double head_offset_x = head_offset.get().first;
-  double head_offset_y = head_offset.get().second;
 
   matryoshka = matryoshka & do_postscript;   // Formulate it this way.
 
