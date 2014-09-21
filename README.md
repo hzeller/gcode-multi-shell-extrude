@@ -27,36 +27,39 @@ without parameters.
 
      usage: ./multi-shell-extrude [options]
      Synopsis:
-     --- Long option           [short]: help ---
+     ... Long option          [short]: <help>
+
      [ Screw-data from template ]
-      --screw-template <value> [-t]: Template string for screw. (default: 'AABBBAABBBAABBB')
-      --thread-depth <value>   [-d]: Depth of thread, initial-size/5 if negative (default: '-1.00')
-      --twist <value>              : Twist ratio of angle per radius fraction (good -0.3..0.3) (default: '0.00')
+       --screw-template <value>[-t]: Template string for screw. (default: 'AABBBAABBBAABBB')
+       --thread-depth <value>  [-d]: Depth of thread, initial-size/5 if negative (default: '-1.00')
+       --twist <value>             : Twist ratio of angle per radius fraction (good -0.3..0.3) (default: '0.00')
 
-      [ Screw-data from polygon file ]
-      --polygon-file <value>   [-D]: File describing polygon. Files with x y pairs (default: '')
+     [ Screw-data from polygon file ]
+       --polygon-file <value>  [-D]: File describing polygon. Files with x y pairs (default: '')
 
-      [ General Parameters ]
-      --height <value>         [-h]: Total height to be printed (default: '-1.00')
-      --pitch <value>          [-p]: Millimeter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
-      --size <value>           [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
-      --pump <value>               : Pump polygon as if the center was not a dot, but a circle of this radius (default: '0.00')
-      --number <value>         [-n]: Number of screws to be printed (default: '2')
-      --start-offset <value>       : Initial offset for first polygon (default: '0.00')
-      --offset <value>         [-R]: Offset increment between screws - the clearance (default: '1.20')
-      --layer-height <value>   [-l]: Height of each layer (default: '0.16')
-      --feed-rate <value>      [-f]: maximum, in mm/s (default: '100.00')
-      --layer-time <value>     [-T]: Min time per layer; upper bound for feed-rate (default: '8.00')
-      --nozzle-diameter <value>    : Diameter of extruder nozzle (default: '0.40')
-      --filament-diameter <value>  : Diameter of filament (default: '1.75')
-      --shell-thickness <value>    : Thickness of shell (default: '0.80')
-      --lock-offset <value>        : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
-      --bed-size <value>       [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
-      --head-offset <value>    [-o]: dx/dy offset per print. (default: '45.00,45.00')
+     [ General Parameters ]
+       --height <value>        [-h]: Total height to be printed (default: '-1.00')
+       --pitch <value>         [-p]: Millimeter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
+       --size <value>          [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
+       --center-offset <value>     : Center offset into polygon. (default: '0.00,0.00')
+       --pump <value>              : Pump polygon as if the center was not a dot, but a circle of this radius (default: '0.00')
+       --number <value>        [-n]: Number of screws to be printed (default: '2')
+       --start-offset <value>      : Initial offset for first polygon (default: '0.00')
+       --offset <value>        [-R]: Offset increment between screws - the clearance (default: '1.20')
+       --layer-height <value>  [-l]: Height of each layer (default: '0.16')
+       --feed-rate <value>     [-f]: maximum, in mm/s (default: '100.00')
+       --layer-time <value>    [-T]: Min time per layer; upper bound for feed-rate (default: '8.00')
+       --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')
+       --filament-diameter <value> : Diameter of filament (default: '1.75')
+       --shell-thickness <value>   : Thickness of shell (default: '0.80')
+       --lock-offset <value>       : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
+       --bed-size <value>      [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
+       --edge-offset <value>       : Offset from the edge of the bed. (default: '5.00,5.00')
+       --head-offset <value>   [-o]: dx/dy offset per print. (default: '45.00,45.00')
 
-      [ Output Options ]
-      --postscript <value>     [-P]: PostScript output instead of GCode output (default: 'off')
-      --nested <value>             : For PostScript: show nested (Matryoshka doll style) (default: 'off')
+     [ Output Options ]
+       --postscript            [-P]: PostScript output instead of GCode output (default: 'off')
+       --nested                    : For PostScript: show nested (Matryoshka doll style) (default: 'off')
 
 Some of the long options have short equivalents for convenient short invocations.
 

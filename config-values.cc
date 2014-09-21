@@ -95,9 +95,9 @@ int ParameterUsage(const char *progname) {
   fprintf(stderr, "usage: %s [options]\n", progname);
   if (!sRegisteredParameters)
     return 1;
-  const int kIndentBetweenOptionAndHelp = 18;
-  fprintf(stderr, "Synopsis:\n*** Long option%*s[short]: <help>\n",
-          kIndentBetweenOptionAndHelp - 7, "");
+  const int kIndentBetweenOptionAndHelp = 26;
+  fprintf(stderr, "Synopsis:\n... Long option%*s[short]: <help>\n",
+          kIndentBetweenOptionAndHelp - 16, "");
   for (ParamList::const_iterator it = sRegisteredParameters->begin();
        it != sRegisteredParameters->end(); ++it) {
     int indent = kIndentBetweenOptionAndHelp;
@@ -108,9 +108,12 @@ int ParameterUsage(const char *progname) {
       continue;
     }
     if (p->option_name) {
-      fprintf(stderr, "    --%s <value> ",
-              p->option_name);
+      fprintf(stderr, "    --%s", p->option_name);
       indent -= strlen(p->option_name);
+      if (p->RequiresValue()) {
+        fprintf(stderr, " <value>");
+        indent -= strlen(" <value>");
+      }
     }
     if (p->option_char) indent -=4;
     fprintf(stderr, "%*s", indent, "");
