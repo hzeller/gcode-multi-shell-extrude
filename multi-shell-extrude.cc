@@ -190,9 +190,6 @@ double GetRadius(const Polygon &polygon) {
 }
 
 int main(int argc, char *argv[]) {
-  double start_x = 5;  // Initial edge offset.
-  double start_y = 5;
-
   ParamHeadline h1("Screw-data from template");
   StringParam fun_init    ("AABBBAABBBAABBB", "screw-template", 't', "Template string for screw.");
   FloatParam thread_depth (-1, "thread-depth", 'd',   "Depth of thread, initial-size/5 if negative");
@@ -220,6 +217,8 @@ int main(int argc, char *argv[]) {
   FloatParam shell_thickness(0.8, "shell-thickness", 0, "Thickness of shell");
   FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
   FloatPairParam machine_limit(std::make_pair(150.0f,150.0f), "bed-size",    'L',  "x/y size limit of your printbed.");
+  FloatPairParam edge_offset(std::make_pair(5.0f,5.0f), "edge-offset",  0,  "Offset from the edge of the bed.");
+
   FloatPairParam head_offset(std::make_pair(45.0f,45.0f),     "head-offset", 'o', "dx/dy offset per print.");
 
   // Output options
@@ -276,6 +275,8 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  double start_x = edge_offset.get().first;
+  double start_y = edge_offset.get().second;
   if (matryoshka) {
     Polygon biggst_polygon
       = PolygonOffset(base_polygon,
