@@ -104,7 +104,7 @@ int ParameterUsage(const char *progname) {
     const Parameter *const p = *it;
     if (p->option_name == NULL && p->option_char == 0) {
       // This is a headline.
-      fprintf(stderr, "\n [ %s ]\n", p->helptext);
+      fprintf(stderr, "\n[ %s ]\n", p->helptext);
       continue;
     }
     if (p->option_name) {

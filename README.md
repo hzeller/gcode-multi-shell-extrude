@@ -38,7 +38,7 @@ without parameters.
        --polygon-file <value>  [-D]: File describing polygon. Files with x y pairs (default: '')
 
      [ General Parameters ]
-       --height <value>        [-h]: Total height to be printed (default: '-1.00')
+       --height <value>        [-h]: Total height to be printed (must set) (default: '-1.00')
        --pitch <value>         [-p]: Millimeter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
        --size <value>          [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
        --center-offset <value>     : Center offset into polygon. (default: '0.00,0.00')
@@ -46,16 +46,20 @@ without parameters.
        --number <value>        [-n]: Number of screws to be printed (default: '2')
        --start-offset <value>      : Initial offset for first polygon (default: '0.00')
        --offset <value>        [-R]: Offset increment between screws - the clearance (default: '1.20')
+       --lock-offset <value>       : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
+
+     [ Quality ]
        --layer-height <value>  [-l]: Height of each layer (default: '0.16')
+       --shell-thickness <value>   : Thickness of shell (default: '0.80')
        --feed-rate <value>     [-f]: maximum, in mm/s (default: '100.00')
        --layer-time <value>    [-T]: Min time per layer; upper bound for feed-rate (default: '8.00')
+
+     [ Printer Parameters ]
        --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')
        --filament-diameter <value> : Diameter of filament (default: '1.75')
-       --shell-thickness <value>   : Thickness of shell (default: '0.80')
-       --lock-offset <value>       : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
        --bed-size <value>      [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
-       --edge-offset <value>       : Offset from the edge of the bed. (default: '5.00,5.00')
        --head-offset <value>   [-o]: dx/dy offset per print. (default: '45.00,45.00')
+       --edge-offset <value>       : Offset from the edge of the bed (bottom left origin). (default: '5.00,5.00')
 
      [ Output Options ]
        --postscript            [-P]: PostScript output instead of GCode output (default: 'off')

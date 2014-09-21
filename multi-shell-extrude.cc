@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
   StringParam polygon_file("", "polygon-file", 'D',  "File describing polygon. Files with x y pairs");
 
   ParamHeadline h3("General Parameters");
-  FloatParam total_height (-1,    "height", 'h', "Total height to be printed");
+  FloatParam total_height (-1,    "height", 'h', "Total height to be printed (must set)");
   FloatParam pitch        (30.0,  "pitch",  'p', "Millimeter height a full turn takes. "
                            "Negative for left-turning screw; 0 for straight hull.");
   FloatParam initial_size (10.0, "size",    's', "Polygon sizing parameter. Means radius if from "
@@ -209,20 +209,23 @@ int main(int argc, char *argv[]) {
   IntParam screw_count    (2,     "number", 'n', "Number of screws to be printed");
   FloatParam initial_shell(0,     "start-offset", 0, "Initial offset for first polygon");
   FloatParam shell_increment(1.2, "offset", 'R', "Offset increment between screws - the clearance");
+  FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
+
+  ParamHeadline h4("Quality");
   FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
+  FloatParam shell_thickness(0.8, "shell-thickness", 0, "Thickness of shell");
   FloatParam feed_mm_per_sec(100, "feed-rate",    'f', "maximum, in mm/s");
   FloatParam min_layer_time(8,    "layer-time",   'T', "Min time per layer; upper bound for feed-rate");
+
+  ParamHeadline h5("Printer Parameters");
   FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
   FloatParam filament_diameter(1.75, "filament-diameter", 0, "Diameter of filament");
-  FloatParam shell_thickness(0.8, "shell-thickness", 0, "Thickness of shell");
-  FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
   Vector2DParam machine_limit(Vector2D(150.0,150.0), "bed-size",    'L',  "x/y size limit of your printbed.");
-  Vector2DParam edge_offset(Vector2D(5.0,5.0), "edge-offset",  0,  "Offset from the edge of the bed.");
-
   Vector2DParam head_offset(Vector2D(45.0,45.0),"head-offset", 'o', "dx/dy offset per print.");
+  Vector2DParam edge_offset(Vector2D(5.0,5.0), "edge-offset",  0,  "Offset from the edge of the bed (bottom left origin).");
 
   // Output options
-  ParamHeadline h4("Output Options");
+  ParamHeadline h6("Output Options");
   BoolParam do_postscript(false, "postscript", 'P', "PostScript output instead of GCode output");
   BoolParam matryoshka(false,    "nested",      0, "For PostScript: show nested (Matryoshka doll style)");
 
