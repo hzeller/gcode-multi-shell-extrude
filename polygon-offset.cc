@@ -26,7 +26,8 @@ static bool is_centered(const ClipperLib::Path &path) {
   return (min_x < 0 && max_x > 0 && min_y < 0 && max_y > 0);
 }
 
-Polygon PolygonOffset(const Polygon &polygon, double offset) {
+Polygon PolygonOffset(const Polygon &polygon, double offset,
+                      OffsetType type) {
   ClipperLib::Path path;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Point2D &p = polygon[i];
@@ -35,7 +36,13 @@ Polygon PolygonOffset(const Polygon &polygon, double offset) {
 
   ClipperLib::Paths solutions;
   ClipperLib::ClipperOffset co(2.0, 5); // 5/100mm = 1/20mm
-  co.AddPath(path, ClipperLib::jtRound, ClipperLib::etClosedPolygon);
+  ClipperLib::JoinType join = ClipperLib::jtRound;
+  switch (type) {
+  case kOffsetRound:  join = ClipperLib::jtRound; break;
+  case kOffsetSquare: join = ClipperLib::jtSquare; break;
+  case kOffsetMiter:  join = ClipperLib::jtMiter; break;
+  }
+  co.AddPath(path, join, ClipperLib::etClosedPolygon);
   co.Execute(solutions, 100.0 * offset);
 
   // A polygon might become pieces when offset. Use the one that is centered.

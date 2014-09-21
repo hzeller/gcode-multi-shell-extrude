@@ -28,6 +28,8 @@ Polygon RotationalPolygon(const char *fun_init, double inner_radius,
 // Offset an polygon. Minkowski with disk of radius "offset".
 // The actual Minkowski sum would have arc segments, that is flattened as
 // line segments. In polygon-offset.cc
-Polygon PolygonOffset(const Polygon &in, double offset);
+enum OffsetType { kOffsetRound, kOffsetSquare, kOffsetMiter };
+Polygon PolygonOffset(const Polygon &in, double offset,
+                      OffsetType type = kOffsetRound);
 
 #endif  // MULTI_SHELL_EXTRUDE_H_
