@@ -251,20 +251,31 @@ int main(int argc, char *argv[]) {
   const double head_offset_y = head_offset.get().second;
   double machine_limit_x = machine_limit.get().first;
   double machine_limit_y = machine_limit.get().second;
+  double start_x = edge_offset.get().first;
+  double start_y = edge_offset.get().second;
 
   matryoshka = matryoshka & do_postscript;   // Formulate it this way.
 
-  // Get polygon we'll be working on. Add pump if needed.
-  const Polygon input_polygon =
-    RadialPumpPolygon(polygon_file.get().empty()
-                      ? RotationalPolygon(fun_init.get().c_str(), initial_size,
-                                          thread_depth, twist)
-                      : ReadPolygon(polygon_file, initial_size),
-                      pump);
+  // Get polygon we'll be working on; either from rotational input or file.
+  Polygon input_polygon = (polygon_file.get().empty()
+                           ? RotationalPolygon(fun_init.get().c_str(),
+                                               initial_size,
+                                               thread_depth, twist)
+                           : ReadPolygon(polygon_file, initial_size));
 
-  const Polygon base_polygon = OffsetCenter(input_polygon,
-                                            center_offset.get().first,
-                                            center_offset.get().second);
+  // Add pump if needed.
+  if (pump > 0) {
+    input_polygon = RadialPumpPolygon(input_polygon, pump);
+  }
+
+  // .. and offsetting
+  if (center_offset.get().first != 0 || center_offset.get().second != 0) {
+    input_polygon = OffsetCenter(input_polygon,
+                                 center_offset.get().first,
+                                 center_offset.get().second);
+  }
+
+  const Polygon base_polygon = input_polygon;
   if (base_polygon.empty()) {
     fprintf(stderr, "Polygon empty\n");
     return 1;
@@ -275,8 +286,6 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  double start_x = edge_offset.get().first;
-  double start_y = edge_offset.get().second;
   if (matryoshka) {
     Polygon biggst_polygon
       = PolygonOffset(base_polygon,
