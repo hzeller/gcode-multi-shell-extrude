@@ -125,8 +125,8 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
 Polygon OffsetCenter(const Polygon& polygon, double x_offset, double y_offset) {
   Polygon result;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
-    const Point2D &p = polygon[i];
-    result.push_back(Point2D(p.x + x_offset, p.y + y_offset));
+    const Vector2D &p = polygon[i];
+    result.push_back(Vector2D(p.x + x_offset, p.y + y_offset));
   }
   return result;
 }
@@ -149,7 +149,7 @@ Polygon ReadPolygon(const std::string &filename, double factor) {
       start++;
     if (*start == '\0' || *start == '#')
       continue;
-    Point2D p;
+    Vector2D p;
     if (sscanf(start, "%lf %lf", &p.x, &p.y) == 2) {
       p.x *= factor;
       p.y *= factor;
@@ -172,10 +172,10 @@ Polygon RadialPumpPolygon(const Polygon& polygon, double pump_r) {
     return polygon;
   Polygon result;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
-    const Point2D &p = polygon[i];
+    const Vector2D &p = polygon[i];
     double from_center = distance(p.x, p.y, 0);
     double stretch = (from_center + pump_r) / from_center;
-    result.push_back(Point2D(p.x * stretch, p.y * stretch));
+    result.push_back(Vector2D(p.x * stretch, p.y * stretch));
   }
   return result;
 }

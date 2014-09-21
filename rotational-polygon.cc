@@ -77,7 +77,7 @@ Polygon RotationalPolygon(const char *fun_init, double inner_radius,
     const double r = inner_radius + thread_depth * pol_value;
     const double x = r * cos((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
     const double y = r * sin((angle + AngleTwist(twist, r, max_r)) * 2 * M_PI);
-    result.push_back(Point2D(x, y));
+    result.push_back(Vector2D(x, y));
   }
   return result;
 }

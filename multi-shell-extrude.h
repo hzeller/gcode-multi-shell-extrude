@@ -8,12 +8,12 @@
 #include <vector>
 #include <math.h>
 
-struct Point2D {
-  Point2D() : x(0), y(0) {}
-  Point2D(double xx, double yy) : x(xx), y(yy){}
+struct Vector2D {
+  Vector2D() : x(0), y(0) {}
+  Vector2D(double xx, double yy) : x(xx), y(yy){}
   double x, y;
 };
-typedef std::vector<Point2D> Polygon;
+typedef std::vector<Vector2D> Polygon;
 
 // Calculate euclidian distance.
 inline double distance(double dx, double dy, double dz) {
