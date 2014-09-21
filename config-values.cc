@@ -77,17 +77,17 @@ template<> std::string TypedParameter<bool>::ToString() const {
 template<> bool TypedParameter<bool>::RequiresValue() const { return false; }
 
 template<>
-bool TypedParameter<std::pair<float,float> >::FromString(const char *s) {
-  return sscanf(s, "%f,%f", &value_.first, &value_.second) == 2;
+bool TypedParameter<Vector2D>::FromString(const char *s) {
+  return sscanf(s, "%lf,%lf", &value_.x, &value_.y) == 2;
 }
 
 template<>
-std::string TypedParameter<std::pair<float,float> >::ToString() const {
+std::string TypedParameter<Vector2D>::ToString() const {
   char buffer[30];
-  snprintf(buffer, sizeof(buffer), "%.2f,%.2f", value_.first, value_.second);
+  snprintf(buffer, sizeof(buffer), "%.2f,%.2f", value_.x, value_.y);
   return buffer;
 }
-template<> bool TypedParameter<std::pair<float,float> >::RequiresValue() const {
+template<> bool TypedParameter<Vector2D>::RequiresValue() const {
   return true;
 }
 

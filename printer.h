@@ -5,6 +5,8 @@
 #ifndef SHELL_EXTRUDE_PRINTER_H_
 #define SHELL_EXTRUDE_PRINTER_H_
 
+#include "multi-shell-extrude.h"
+
 // Define this with empty, if you're not using gcc.
 #ifdef __GNUC__
 #  define PRINTF_FMT_CHECK(fmt_pos, args_pos) \
@@ -20,12 +22,12 @@
 class Printer {
 public:
   // Preamble: what to do to start the file.
-  virtual void Preamble(double machine_limit_x, double machine_limit_y,
+  virtual void Preamble(const Vector2D &machine_limit,
                         double feed_mm_per_sec) = 0;
 
   // Initialization. To be called after Preamble, which might create some
   // settings in the
-  virtual void Init(double machine_limit_x, double machine_limit_y,
+  virtual void Init(const Vector2D &machine_limit,
                     double feed_mm_per_sec) = 0;
   virtual void Postamble() = 0;
   virtual void Comment(const char *fmt, ...) PRINTF_FMT_CHECK(2, 3) = 0;

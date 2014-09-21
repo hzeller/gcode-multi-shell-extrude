@@ -17,21 +17,21 @@ public:
   GCodePrinter(double extrusion_factor)
     : filament_extrusion_factor_(extrusion_factor), extrude_dist_(0) {}
 
-  virtual void Preamble(double machine_limit_x, double machine_limit_y,
+  virtual void Preamble(const Vector2D &machine_limit,
                         double feed_mm_per_sec) {
     printf("; G-Code\n\n");
   }
 
-  virtual void Init(double machine_limit_x, double machine_limit_y,
+  virtual void Init(const Vector2D &machine_limit,
                     double feed_mm_per_sec) {
     printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
     printf("M82 ; absolute E\nG92 E0 ; zero E\n");
-    printf("G0 X%.1f Y10 Z30 ; move to center front\n", machine_limit_x/2);
+    printf("G0 X%.1f Y10 Z30 ; move to center front\n", machine_limit.x/2);
     printf("M109 S190\nM116\n");
     printf("G1 E3 ; squirt out some test in air\n"); // squirt out some test
     printf("G92 E0\n; test extrusion...\n");
-    const double test_extrusion_from = 0.8 * machine_limit_x;
-    const double test_extrusion_to = 0.2 * machine_limit_x;
+    const double test_extrusion_from = 0.8 * machine_limit.x;
+    const double test_extrusion_to = 0.2 * machine_limit.x;
     SetSpeed(feed_mm_per_sec / 3);
     MoveTo(test_extrusion_from, 10, 0);
     ExtrudeTo(test_extrusion_to, 10, 0);
@@ -94,13 +94,13 @@ public:
   PostScriptPrinter(bool show_move_as_line, double line_thickness)
     : show_move_as_line_(show_move_as_line), line_thickness_(line_thickness),
       in_move_color_(false) {}
-  virtual void Preamble(double machine_limit_x, double machine_limit_y,
+  virtual void Preamble(const Vector2D &machine_limit,
                         double feed_mm_per_sec) {
     const float mm_to_point = 1 / 25.4 * 72.0;
     printf("%%!PS-Adobe-3.0\n%%%%BoundingBox: 0 0 %.0f %.0f\n\n",
-           machine_limit_x * mm_to_point, machine_limit_y * mm_to_point);
+           machine_limit.x * mm_to_point, machine_limit.y * mm_to_point);
   }
-  virtual void Init(double machine_limit_x, double machine_limit_y,
+  virtual void Init(const Vector2D &machine_limit,
                     double feed_mm_per_sec) {
     printf("72.0 25.4 div dup scale  %% Switch to mm\n");
     printf("1 setlinejoin\n");

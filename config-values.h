@@ -7,6 +7,8 @@
 
 #include <string>
 
+#include "multi-shell-extrude.h"   // Definition of Vector2D
+
 // Prints usage of paramters to STDERR.
 // Always returns 1 (convenient to return from main()).
 int ParameterUsage(const char *progname);
@@ -63,6 +65,11 @@ public:
   // Make it possible to use value as if it was a value of that type.
   operator const T&() const { return value_; }
   const T& get() const { return value_; }
+
+  // Writable access to component values.
+  T* operator->() { return &value_; }
+
+  // Simple writable access to scalars.
   void operator=(const T &v) { value_ = v; }
 
 private:
@@ -78,7 +85,7 @@ typedef TypedParameter<std::string> StringParam;
 typedef TypedParameter<int> IntParam;
 typedef TypedParameter<float> FloatParam;
 typedef TypedParameter<bool> BoolParam;
-typedef TypedParameter<std::pair<float, float> > FloatPairParam;
+typedef TypedParameter<Vector2D> Vector2DParam;
 
 #endif  // SHELL_EXTRUDE_CONFIG_VALUES_H_
 
