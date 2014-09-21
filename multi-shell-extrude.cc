@@ -35,11 +35,11 @@ double CalcPolygonLen(const Polygon &polygon) {
 // Requires: Polygon with centroid on (0,0)
 static void CreateExtrusion(const Polygon &extrusion_polygon,
                             Printer *printer,
-                            double offset_x, double offset_y,
+                            const Vector2D &center,
                             double layer_height, double total_height,
                             double rotation_per_mm,
                             double lock_offset) {
-  printer->Comment("Center X=%.1f Y=%.1f\n", offset_x, offset_y);
+  printer->Comment("Center X=%.1f Y=%.1f\n", center.x, center.y);
   const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
   printer->SwitchFan(false);
@@ -93,7 +93,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
 
     if (state != prev_state) {
       polygon_len = CalcPolygonLen(p);
-      printer->MoveTo(p[0].x + offset_x, p[0].y + offset_y, height);
+      printer->MoveTo(p[0].x + center.x, p[0].y + center.y, height);
     }
 
     for (int i = 0; i < (int) p.size(); ++i) {
@@ -108,10 +108,10 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
       const double y = p[i].y * cos(a) + p[i].x * sin(a);
       const double z = height + layer_height * fraction;
       if (z < total_height - 0.20 * layer_height) {
-        printer->ExtrudeTo(x + offset_x, y + offset_y, z);
+        printer->ExtrudeTo(x + center.x, y + center.y, z);
       } else {
         // In the last layer, we stop extruding to have a smooth finish.
-        printer->MoveTo(x + offset_x, y + offset_y, z);
+        printer->MoveTo(x + center.x, y + center.y, z);
       }
     }
 
@@ -342,8 +342,7 @@ int main(int argc, char *argv[]) {
   double total_time = 0;
   double total_travel = 0;
 
-  double x = edge_offset->x;
-  double y = edge_offset->y;
+  Vector2D center = edge_offset;
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
     Polygon polygon = PolygonOffset(base_polygon,
@@ -351,10 +350,11 @@ int main(int argc, char *argv[]) {
     double radius = GetRadius(polygon);
     if (!matryoshka) {
       // New center.
-      x += radius;
-      y += radius;
+      center.x += radius;
+      center.y += radius;
     }
-    if (x + radius + 5 > machine_limit->x || y + radius + 5 > machine_limit->y) {
+    if (center.x + radius + 5 > machine_limit->x ||
+        center.y + radius + 5 > machine_limit->y) {
       fprintf(stderr, "With currently configured bedsize and printhead-offset, "
               "only %d screws fit (radius is %.1fmm)\n"
               "Configure your machine constraints with -L <x/y> -o < dx,dy> "
@@ -363,14 +363,14 @@ int main(int argc, char *argv[]) {
               head_offset->x, head_offset->y);
       break;
     }
-    printer->MoveTo(x, y, i > 0 ? total_height + 5 : 5);
+    printer->MoveTo(center.x, center.y, i > 0 ? total_height + 5 : 5);
     float layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec.get());
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
                      i+1, initial_shell + i * shell_increment);
-    CreateExtrusion(polygon, printer, x, y, layer_height, total_height,
+    CreateExtrusion(polygon, printer, center, layer_height, total_height,
                     rotation_per_mm, lock_offset);
     const double travel = printer->GetExtrusionDistance();  // since last reset.
     total_travel += travel;
@@ -379,8 +379,8 @@ int main(int argc, char *argv[]) {
     printer->Retract();
     printer->GoZPos(total_height + 5);
     if (!matryoshka) {
-      x += head_offset->x + radius;
-      y += head_offset->y + radius;
+      center.x += head_offset->x + radius;
+      center.y += head_offset->y + radius;
     }
   }
 
