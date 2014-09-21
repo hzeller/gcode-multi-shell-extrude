@@ -122,6 +122,15 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
   }
 }
 
+Polygon OffsetCenter(const Polygon& polygon, double x_offset, double y_offset) {
+  Polygon result;
+  for (std::size_t i = 0; i < polygon.size(); ++i) {
+    const Point2D &p = polygon[i];
+    result.push_back(Point2D(p.x + x_offset, p.y + y_offset));
+  }
+  return result;
+}
+
 // Read very simple polygon from file: essentially a sequence of x y
 // coordinates.
 Polygon ReadPolygon(const std::string &filename, double factor) {
@@ -198,6 +207,7 @@ int main(int argc, char *argv[]) {
                            "Negative for left-turning screw; 0 for straight hull.");
   FloatParam initial_size (10.0, "size",    's', "Polygon sizing parameter. Means radius if from "
                            "--screw-template, factor for --polygon-file");
+  FloatPairParam center_offset(std::make_pair(0.0f,0.0f), "center-offset", 0, "Center offset into polygon.");
   FloatParam pump         (0.0,   "pump",    0, "Pump polygon as if the center was not a dot, but a circle of this radius");
   IntParam screw_count    (2,     "number", 'n', "Number of screws to be printed");
   FloatParam initial_shell(0,     "start-offset", 0, "Initial offset for first polygon");
@@ -246,13 +256,16 @@ int main(int argc, char *argv[]) {
   matryoshka = matryoshka & do_postscript;   // Formulate it this way.
 
   // Get polygon we'll be working on. Add pump if needed.
-  const Polygon base_polygon =
+  const Polygon input_polygon =
     RadialPumpPolygon(polygon_file.get().empty()
                       ? RotationalPolygon(fun_init.get().c_str(), initial_size,
                                           thread_depth, twist)
                       : ReadPolygon(polygon_file, initial_size),
                       pump);
 
+  const Polygon base_polygon = OffsetCenter(input_polygon,
+                                            center_offset.get().first,
+                                            center_offset.get().second);
   if (base_polygon.empty()) {
     fprintf(stderr, "Polygon empty\n");
     return 1;
