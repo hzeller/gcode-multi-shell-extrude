@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
                            "Negative for left-turning screw; 0 for straight hull.");
   FloatParam initial_size (10.0, "size",    's', "Polygon sizing parameter. Means radius if from "
                            "--screw-template, factor for --polygon-file");
-  Vector2DParam center_offset(Vector2D(0.0, 0.0), "center-offset", 0, "Center offset into polygon.");
+  Vector2DParam center_offset(Vector2D(0.0, 0.0), "center-offset", 0, "Rotation-center offset into polygon.");
   FloatParam pump         (0.0,   "pump",    0, "Pump polygon as if the center was not a dot, but a circle of this radius");
   IntParam screw_count    (2,     "number", 'n', "Number of screws to be printed");
   FloatParam initial_shell(0,     "start-offset", 0, "Initial offset for first polygon");
@@ -350,6 +350,11 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i < screw_count; ++i) {
     Polygon polygon = PolygonOffset(base_polygon,
                                     initial_shell + i * shell_increment);
+    if (polygon.size() == 0) {
+      fprintf(stderr, "Polygon offset %.1f results in empty polygon\n",
+              initial_shell + i * shell_increment);
+      continue;
+    }
     double radius = GetRadius(polygon);
     if (!matryoshka) {
       // New center.
