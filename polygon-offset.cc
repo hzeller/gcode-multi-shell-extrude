@@ -45,6 +45,9 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   co.AddPath(path, join, ClipperLib::etClosedPolygon);
   co.Execute(solutions, 100.0 * offset);
 
+  if (solutions.size() == 0)  // Nothing left.
+    return Polygon();
+
   // A polygon might become pieces when offset. Use the one that is centered.
   ClipperLib::Path &centered_polygon = solutions[0];
   for (std::size_t i = 0; i < solutions.size(); ++i) {
