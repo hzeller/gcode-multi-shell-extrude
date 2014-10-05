@@ -121,7 +121,20 @@ between layers - see below in PostScript output an example.
 Alternatively, you can read an arbitrary polygon from a file. The vertices need
 to be given counterclock wise. The rotation of the resulting screw will be
 around the origin.
-As an example, see `sample/hilbert.poly`
+The polygon file is very simple: each line contins an x and y coordinate,
+As an example, see `sample/hilbert.poly`.
+You can create polygon files by hand or with a program. Often it is simple to
+manually (editor, sed, awk) extract polygon data from from sources such as SVGs.
+
+Pro-tip: you can use gnuplot to visualize polygons while you are working on them.
+
+     $ gnuplot
+             G N U P L O T
+             Version 4.6 patchlevel 4    last modified 2013-10-02 
+     gnuplot> plot "sample/snowflake.poly" with lines
+     gnuplot>
+
+![View in gnuplot][gnuplot-out]
 
 PostScript output
 -----------------
@@ -245,6 +258,7 @@ Have Fun!
 [print]: ./img/print.jpg
 [printrbot]: ./img/printrbot.jpg
 [result]: ./img/result.jpg
+[gnuplot-out]: ./img/snowflake-gnuplot.png
 [hilbert-screw]: ./img/hilbert-screw.jpg
 [hilbert-shells]: ./img/hilbert-shells.jpg
 [multiple-prints]: ./img/multiscrew.jpg
