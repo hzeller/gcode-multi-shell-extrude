@@ -122,7 +122,7 @@ Alternatively, you can read an arbitrary polygon from a file. The vertices need
 to be given counterclock wise. The rotation of the resulting screw will be
 around the origin.
 The polygon file is very simple: each line contins an x and y coordinate,
-As an example, see `[sample/hilbert.poly](./sample/hilbert.poly)`.
+As an example, see [sample/hilbert.poly](./sample/hilbert.poly).
 You can create polygon files by hand or with a program. Often it is simple to
 manually (editor, sed, awk) extract polygon data from from sources such as SVGs.
 
