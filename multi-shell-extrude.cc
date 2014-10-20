@@ -32,6 +32,38 @@ double CalcPolygonLen(const Polygon &polygon) {
   return len;
 }
 
+static void CreateBrim(const Polygon &target_polygon,
+                       Printer *printer,
+                       const Vector2D &center,
+                       double brim,
+                       double spiral_distance) {
+  bool is_first = true;
+  printer->Comment("Create Brim\n");
+  for (/**/; brim > 0; brim -= spiral_distance) {
+    Polygon p = PolygonOffset(target_polygon, brim);
+    float run_len = 0;
+    float polygon_len = CalcPolygonLen(p);
+    // fudging a spiral: we want that the distance from the center
+    // is one spiral_distance less in the end.
+    float outer_distance = distance(p[0].x, p[0].y, 0);
+    for (int i = 0; i < (int) p.size(); ++i) {
+      if (i == 0) {
+        run_len = 0;
+      } else {
+        run_len += distance(p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0);
+      }
+      const double fraction = run_len / polygon_len;
+      double x = p[i].x * (outer_distance - fraction*spiral_distance)/outer_distance;
+      double y = p[i].y * (outer_distance - fraction*spiral_distance)/outer_distance;
+      if (is_first)
+        printer->MoveTo(center.x + x, center.y + y, 0);
+      else
+        printer->ExtrudeTo(center.x + x, center.y + y, 0);
+      is_first = false;
+    }
+  }
+}
+
 // Requires: Polygon with centroid on (0,0)
 static void CreateExtrusion(const Polygon &extrusion_polygon,
                             Printer *printer,
@@ -210,6 +242,7 @@ int main(int argc, char *argv[]) {
   FloatParam initial_shell(0,     "start-offset", 0, "Initial offset for first polygon");
   FloatParam shell_increment(1.2, "offset", 'R', "Offset increment between screws - the clearance");
   FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
+  FloatParam brim(0, "brim", 0, "Add brim of this size on the bottom for better stability");
 
   ParamHeadline h4("Quality");
   FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
@@ -301,8 +334,7 @@ int main(int argc, char *argv[]) {
     total_height = std::min(total_height.get(),
                             3 * layer_height); // not needed more.
     // no move lines w/ Matryoshka
-    printer = CreatePostscriptPrinter(!matryoshka,
-                                      shell_thickness_factor * 2*nozzle_radius);
+    printer = CreatePostscriptPrinter(!matryoshka, shell_thickness);
   } else {
     printer = CreateGCodePrinter(filament_extrusion_factor);
   }
@@ -358,8 +390,8 @@ int main(int argc, char *argv[]) {
     double radius = GetRadius(polygon);
     if (!matryoshka) {
       // New center.
-      center.x += radius;
-      center.y += radius;
+      center.x += radius + brim;
+      center.y += radius + brim;
     }
     if (center.x + radius + 5 > machine_limit->x ||
         center.y + radius + 5 > machine_limit->y) {
@@ -378,6 +410,12 @@ int main(int argc, char *argv[]) {
     printer->SetSpeed(layer_feedrate);
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
                      i+1, initial_shell + i * shell_increment);
+    if (brim > 0) {
+      const float spiral_layer_distance = shell_thickness * 0.95;
+      int layers = (int) ceil(brim / spiral_layer_distance);
+      CreateBrim(polygon, printer, center, layers * spiral_layer_distance,
+                 spiral_layer_distance);
+    }
     CreateExtrusion(polygon, printer, center, layer_height, total_height,
                     rotation_per_mm, lock_offset);
     const double travel = printer->GetExtrusionDistance();  // since last reset.
@@ -387,8 +425,8 @@ int main(int argc, char *argv[]) {
     printer->Retract();
     printer->GoZPos(total_height + 5);
     if (!matryoshka) {
-      center.x += head_offset->x + radius;
-      center.y += head_offset->y + radius;
+      center.x += head_offset->x + radius + brim;
+      center.y += head_offset->y + radius + brim;
     }
   }
 
