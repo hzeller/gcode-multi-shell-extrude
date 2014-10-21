@@ -28,14 +28,18 @@ static bool is_centered(const ClipperLib::Path &path) {
 
 Polygon PolygonOffset(const Polygon &polygon, double offset,
                       OffsetType type) {
+  // Converting float to clipper integer values. Make sure
+  // to stay within limits.
+  const float kAccuracy = 500;
+
   ClipperLib::Path path;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Vector2D &p = polygon[i];
-    path.push_back(ClipperLib::IntPoint(100 * p.x, 100 * p.y));
+    path.push_back(ClipperLib::IntPoint(kAccuracy * p.x, kAccuracy * p.y));
   }
 
   ClipperLib::Paths solutions;
-  ClipperLib::ClipperOffset co(2.0, 5); // 5/100mm = 1/20mm
+  ClipperLib::ClipperOffset co(2.0, 5); // 5/kAccuracy mm
   ClipperLib::JoinType join = ClipperLib::jtRound;
   switch (type) {
   case kOffsetRound:  join = ClipperLib::jtRound; break;
@@ -43,7 +47,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   case kOffsetMiter:  join = ClipperLib::jtMiter; break;
   }
   co.AddPath(path, join, ClipperLib::etClosedPolygon);
-  co.Execute(solutions, 100.0 * offset);
+  co.Execute(solutions, kAccuracy * offset);
 
   if (solutions.size() == 0)  // Nothing left.
     return Polygon();
@@ -60,7 +64,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   Polygon tmp;
   for (std::size_t i = 0; i < centered_polygon.size(); ++i) {
     const ClipperLib::IntPoint &p = centered_polygon[i];
-    tmp.push_back(Vector2D(p.X / 100.0, p.Y / 100.0));
+    tmp.push_back(Vector2D(p.X / kAccuracy, p.Y / kAccuracy));
   }
 
   // The way the clipper library works, the offset polygon might start at a
@@ -74,6 +78,8 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   for (std::size_t i = 0; i < tmp.size(); ++i) {
     const Vector2D &p = tmp[i];
 #if 0
+    // TODO: find center and make line relative to that.
+    // Then use http://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
     const double dist = abs(reference.y * p.x - reference.x * p.y);
     const bool same_side = (reference.x * p.x >= 0) && (reference.y * p.y >= 0);
 #else
