@@ -40,6 +40,7 @@ static void CreateBrim(const Polygon &target_polygon,
   bool is_first = true;
   printer->Comment("Create Brim\n");
   printer->SetColor(0, 0.5, 0);
+  const float z_height = spiral_distance/6;
   for (/**/; brim > spiral_distance/2; brim -= spiral_distance) {
     Polygon p = PolygonOffset(target_polygon, brim);
     float run_len = 0;
@@ -57,9 +58,9 @@ static void CreateBrim(const Polygon &target_polygon,
       double x = p[i].x * (outer_distance - fraction*spiral_distance)/outer_distance;
       double y = p[i].y * (outer_distance - fraction*spiral_distance)/outer_distance;
       if (is_first)
-        printer->MoveTo(center.x + x, center.y + y, 0);
+        printer->MoveTo(center.x + x, center.y + y, z_height);
       else
-        printer->ExtrudeTo(center.x + x, center.y + y, 0);
+        printer->ExtrudeTo(center.x + x, center.y + y, z_height);
       is_first = false;
     }
   }
@@ -245,7 +246,7 @@ int main(int argc, char *argv[]) {
   FloatParam shell_increment(1.2, "offset", 'R', "Offset increment between screws - the clearance");
   FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
   FloatParam brim(0, "brim", 0, "Add brim of this size on the bottom for better stability");
-  FloatParam brim_spiral_factor(0.70, "brim-spiral-factor", 0,
+  FloatParam brim_spiral_factor(0.55, "brim-spiral-factor", 0,
                                "Distance between spirals in brim as factor of shell-thickness");
   FloatParam brim_smooth_radius(0, "brim-smooth-radius", 0, "Smoothing of brim connection to polygon to not get lost in inner details");
 
