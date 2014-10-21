@@ -40,7 +40,7 @@ static void CreateBrim(const Polygon &target_polygon,
   bool is_first = true;
   printer->Comment("Create Brim\n");
   printer->SetColor(0, 0.5, 0);
-  for (/**/; brim > 0; brim -= spiral_distance) {
+  for (/**/; brim > spiral_distance/2; brim -= spiral_distance) {
     Polygon p = PolygonOffset(target_polygon, brim);
     float run_len = 0;
     float polygon_len = CalcPolygonLen(p);
@@ -247,6 +247,7 @@ int main(int argc, char *argv[]) {
   FloatParam brim(0, "brim", 0, "Add brim of this size on the bottom for better stability");
   FloatParam brim_spiral_thick(0.90, "brim-spiral-factor", 0,
                                "Distance between spirals in brim as factor of shell-thickness");
+  FloatParam brim_smooth_radius(0, "brim-smooth-radius", 0, "Smoothing of brim connection to polygon to not get lost in inner details");
 
   ParamHeadline h4("Quality");
   FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
@@ -417,7 +418,8 @@ int main(int argc, char *argv[]) {
     if (brim > 0) {
       const float spiral_layer_distance = shell_thickness * brim_spiral_thick;
       int layers = (int) ceil(brim / spiral_layer_distance);
-      CreateBrim(polygon, printer, center, layers * spiral_layer_distance,
+      Polygon brim_polygon = PolygonOffset(PolygonOffset(polygon, brim_smooth_radius), -brim_smooth_radius);
+      CreateBrim(brim_polygon, printer, center, layers * spiral_layer_distance,
                  spiral_layer_distance);
     }
     CreateExtrusion(polygon, printer, center, layer_height, total_height,
