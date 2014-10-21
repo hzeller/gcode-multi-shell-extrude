@@ -418,7 +418,9 @@ int main(int argc, char *argv[]) {
     if (brim > 0) {
       const float spiral_layer_distance = shell_thickness * brim_spiral_factor;
       int layers = (int) ceil(brim / spiral_layer_distance);
-      Polygon brim_polygon = PolygonOffset(PolygonOffset(polygon, brim_smooth_radius), -brim_smooth_radius);
+      Polygon brim_polygon = polygon;
+      if (brim_smooth_radius > 0)
+        brim_polygon = PolygonOffset(PolygonOffset(polygon, brim_smooth_radius), -brim_smooth_radius);
       CreateBrim(brim_polygon, printer, center, layers * spiral_layer_distance,
                  spiral_layer_distance);
     }

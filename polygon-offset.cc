@@ -73,8 +73,13 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   std::size_t offset_index = 0;
   for (std::size_t i = 0; i < tmp.size(); ++i) {
     const Vector2D &p = tmp[i];
+#if 0
     const double dist = abs(reference.y * p.x - reference.x * p.y);
     const bool same_side = (reference.x * p.x >= 0) && (reference.y * p.y >= 0);
+#else
+    const double dist = distance(p.x - reference.x, p.y - reference.y, 0);
+    const bool same_side = true;
+#endif
     if (i == 0 || (dist < smallest && same_side)) {
       offset_index = i;
       smallest = dist;
