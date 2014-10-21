@@ -45,6 +45,8 @@ public:
   virtual void ExtrudeTo(double x, double y, double z) = 0;
   virtual void SwitchFan(bool on) = 0;
   virtual double GetExtrusionDistance() = 0;
+  // Nice-to-have. Mostly for visualization reasons, doesn't change
+  virtual void SetColor(float r, float g, float b) {}
 };
 
 // Create a printer that outputs GCode to stdout.

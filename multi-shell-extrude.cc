@@ -39,6 +39,7 @@ static void CreateBrim(const Polygon &target_polygon,
                        double spiral_distance) {
   bool is_first = true;
   printer->Comment("Create Brim\n");
+  printer->SetColor(0, 0.5, 0);
   for (/**/; brim > 0; brim -= spiral_distance) {
     Polygon p = PolygonOffset(target_polygon, brim);
     float run_len = 0;
@@ -72,6 +73,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
                             double rotation_per_mm,
                             double lock_offset) {
   printer->Comment("Center X=%.1f Y=%.1f\n", center.x, center.y);
+  printer->SetColor(0, 0, 0);
   const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
   printer->SwitchFan(false);
@@ -334,7 +336,7 @@ int main(int argc, char *argv[]) {
     total_height = std::min(total_height.get(),
                             3 * layer_height); // not needed more.
     // no move lines w/ Matryoshka
-    printer = CreatePostscriptPrinter(!matryoshka, shell_thickness);
+    printer = CreatePostscriptPrinter(!matryoshka, 0.8 * shell_thickness);
   } else {
     printer = CreateGCodePrinter(filament_extrusion_factor);
   }

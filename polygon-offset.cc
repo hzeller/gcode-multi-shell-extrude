@@ -65,14 +65,17 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
 
   // The way the clipper library works, the offset polygon might start at a
   // different point - after all, it is a different polygon.
-  // Let's try to find the one that is closest to the start of the input polygon.
+  // Let's try to find the one that is closest to the start of the input polygon
+  // by looking for the closest point to the line represented by the start-vector,
+  // i.e. closest point in the same direction.
   const Vector2D &reference = polygon[0];
   double smallest = -1;
   std::size_t offset_index = 0;
   for (std::size_t i = 0; i < tmp.size(); ++i) {
     const Vector2D &p = tmp[i];
-    double dist = distance(p.x - reference.x, p.y - reference.y, 0);
-    if (i == 0 || dist < smallest) {
+    const double dist = abs(reference.y * p.x - reference.x * p.y);
+    const bool same_side = (reference.x * p.x >= 0) && (reference.y * p.y >= 0);
+    if (i == 0 || (dist < smallest && same_side)) {
       offset_index = i;
       smallest = dist;
     }

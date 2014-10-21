@@ -93,7 +93,9 @@ class PostScriptPrinter : public Printer {
 public:
   PostScriptPrinter(bool show_move_as_line, double line_thickness)
     : show_move_as_line_(show_move_as_line), line_thickness_(line_thickness),
-      in_move_color_(false) {}
+      in_move_color_(false) {
+    SetColor(0, 0, 0);
+  }
   virtual void Preamble(const Vector2D &machine_limit,
                         double feed_mm_per_sec) {
     const float mm_to_point = 1 / 25.4 * 72.0;
@@ -125,7 +127,7 @@ public:
   virtual void MoveTo(double x, double y, double z) {
     if (show_move_as_line_) {
       if (!in_move_color_) {
-        ColorSwitch(0, 0, 0, 0.9);
+        ColorSwitch(0, 0, 0, 0.9);  // blue move color
         in_move_color_ = true;
       }
       printf("%.1f %.1f lineto\n", x, y);
@@ -135,14 +137,16 @@ public:
   }
   virtual void ExtrudeTo(double x, double y, double z) {
     if (in_move_color_) {
-      ColorSwitch(line_thickness_, 0, 0, 0);
+      ColorSwitch(line_thickness_, r_, g_, b_);
       in_move_color_ = false;
     }
     printf("%.1f %.1f lineto\n", x, y);
   }
   virtual void SwitchFan(bool on) {}
   virtual double GetExtrusionDistance() { return 0; }
-
+  virtual void SetColor(float r, float g, float b) {
+    r_ = r; g_ = g; b_ = b;
+  }
 private:
   void ColorSwitch(float line_width, float r, float g, float b) {
     printf("currentpoint\nstroke\n");   // finish last path; remember pos
@@ -154,6 +158,7 @@ private:
   const bool show_move_as_line_;
   const float line_thickness_;
   bool in_move_color_;
+  float r_, g_, b_;   // color.
 };
 
 }  // end anonymous namespace.
