@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
   FloatParam shell_increment(1.2, "offset", 'R', "Offset increment between screws - the clearance");
   FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
   FloatParam brim(0, "brim", 0, "Add brim of this size on the bottom for better stability");
-  FloatParam brim_spiral_thick(0.90, "brim-spiral-factor", 0,
+  FloatParam brim_spiral_factor(0.70, "brim-spiral-factor", 0,
                                "Distance between spirals in brim as factor of shell-thickness");
   FloatParam brim_smooth_radius(0, "brim-smooth-radius", 0, "Smoothing of brim connection to polygon to not get lost in inner details");
 
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
                      i+1, initial_shell + i * shell_increment);
     if (brim > 0) {
-      const float spiral_layer_distance = shell_thickness * brim_spiral_thick;
+      const float spiral_layer_distance = shell_thickness * brim_spiral_factor;
       int layers = (int) ceil(brim / spiral_layer_distance);
       Polygon brim_polygon = PolygonOffset(PolygonOffset(polygon, brim_smooth_radius), -brim_smooth_radius);
       CreateBrim(brim_polygon, printer, center, layers * spiral_layer_distance,
