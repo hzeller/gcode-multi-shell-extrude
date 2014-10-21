@@ -48,23 +48,26 @@ static void CreateBrim(const Polygon &target_polygon,
   for (/**/; brim > spiral_distance/2; brim -= spiral_distance) {
     Polygon p = PolygonOffset(target_polygon, brim);
     float run_len = 0;
-    float polygon_len = CalcPolygonLen(p);
+    const float polygon_len = CalcPolygonLen(p);
+    const Vector2D centroid = Centroid(p);
     // fudging a spiral: we want that the distance from the center
     // is one spiral_distance less in the end.
-    float outer_distance = distance(p[0].x, p[0].y, 0);
+    float outer_distance = (p[0] - centroid).magnitude();
     for (int i = 0; i < (int) p.size(); ++i) {
       if (i == 0) {
         run_len = 0;
       } else {
-        run_len += distance(p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0);
+        run_len += (p[i] - p[i-1]).magnitude();
       }
+      Vector2D current_point_from_center = p[i] - centroid;
       const double fraction = run_len / polygon_len;
-      double x = p[i].x * (outer_distance - fraction*spiral_distance)/outer_distance;
-      double y = p[i].y * (outer_distance - fraction*spiral_distance)/outer_distance;
+      float spiral_adjust = (outer_distance - fraction*spiral_distance)/outer_distance;
+      current_point_from_center = current_point_from_center * spiral_adjust;
+      Vector2D next_pos = center + centroid + current_point_from_center;
       if (is_first)
-        printer->MoveTo(center.x + x, center.y + y, z_height);
+        printer->MoveTo(next_pos.x, next_pos.y, z_height);
       else
-        printer->ExtrudeTo(center.x + x, center.y + y, z_height);
+        printer->ExtrudeTo(next_pos.x, next_pos.y, z_height);
       is_first = false;
     }
   }
