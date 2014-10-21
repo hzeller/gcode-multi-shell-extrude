@@ -413,7 +413,7 @@ int main(int argc, char *argv[]) {
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
                      i+1, initial_shell + i * shell_increment);
     if (brim > 0) {
-      const float spiral_layer_distance = shell_thickness * 0.95;
+      const float spiral_layer_distance = shell_thickness * 0.90;
       int layers = (int) ceil(brim / spiral_layer_distance);
       CreateBrim(polygon, printer, center, layers * spiral_layer_distance,
                  spiral_layer_distance);
