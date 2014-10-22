@@ -146,7 +146,9 @@ public:
   virtual double GetExtrusionDistance() { return 0; }
   virtual void SetColor(float r, float g, float b) {
     r_ = r; g_ = g; b_ = b;
-    ColorSwitch(line_thickness_, r, g, b);
+    if (!in_move_color_) {
+      ColorSwitch(line_thickness_, r, g, b);
+    }
   }
 private:
   void ColorSwitch(float line_width, float r, float g, float b) {
