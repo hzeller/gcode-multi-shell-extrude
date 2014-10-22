@@ -401,10 +401,10 @@ int main(int argc, char *argv[]) {
       continue;
     }
     double radius = GetRadius(polygon);
+    Vector2D screw_radius(radius + brim, radius + brim);
     if (!matryoshka) {
-      // New center.
-      center.x += radius + brim;
-      center.y += radius + brim;
+      // We start here.
+      center = center + screw_radius;
     }
     if (center.x + radius + 5 > machine_limit->x ||
         center.y + radius + 5 > machine_limit->y) {
@@ -441,8 +441,7 @@ int main(int argc, char *argv[]) {
     printer->Retract();
     printer->GoZPos(total_height + 5);
     if (!matryoshka) {
-      center.x += head_offset->x + radius + brim;
-      center.y += head_offset->y + radius + brim;
+      center = center + screw_radius + head_offset;
     }
   }
 
