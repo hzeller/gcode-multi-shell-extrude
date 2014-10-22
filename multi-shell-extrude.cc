@@ -327,15 +327,40 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  // Determine limits
   if (matryoshka) {
     Polygon biggst_polygon
       = PolygonOffset(base_polygon,
                       initial_shell + (screw_count-1) * shell_increment);
-    double max_radius = GetRadius(biggst_polygon);
-    machine_limit->x = 2 * (max_radius + 5);
-    machine_limit->y = 2 * (max_radius + 5);
-    edge_offset->x = max_radius + 5;
-    edge_offset->y = max_radius + 5;
+    double max_radius = GetRadius(biggst_polygon) + brim;
+    Vector2D poly_radius(max_radius + 5, max_radius + 5);
+    machine_limit = poly_radius * 2;
+    edge_offset = poly_radius;  // In matryoshka-case, edge_offset is center
+  } else {
+    const Vector2D max_machine = machine_limit - edge_offset;
+    Vector2D pos = edge_offset;
+    float radius = GetRadius(PolygonOffset(base_polygon, initial_shell));
+    Vector2D screw_dimension(2 * (radius + brim), 2*(radius + brim));
+    for (int i = 0; i < screw_count; ++i) {
+      Vector2D new_pos = pos + screw_dimension;
+      if (new_pos.x > max_machine.x || new_pos.y > max_machine.y) {
+        fprintf(stderr, "With currently configured bedsize and printhead-offset, "
+                "only %d screws fit (radius is %.1fmm)\n"
+                "Configure your machine constraints with -L <x/y> -o < dx,dy> "
+                "(currently -L %.0f,%.0f -o %.0f,%.0f)\n", i, radius,
+                machine_limit->x, machine_limit->y,
+                head_offset->x, head_offset->y);
+        screw_count = i;
+        break;
+      }
+      pos = new_pos + head_offset;
+      screw_dimension = screw_dimension
+        + Vector2D(shell_increment, shell_increment) * 2;
+    }
+    pos = pos - head_offset;
+    // Now, pos is the largest corner. We can offset
+    // the edge_offset now to the difference to center things.
+    edge_offset = edge_offset + (max_machine - pos - edge_offset) / 2;
   }
 
   const double filament_extrusion_factor = shell_thickness_factor *
@@ -405,16 +430,6 @@ int main(int argc, char *argv[]) {
     if (!matryoshka) {
       // We start here.
       center = center + screw_radius;
-    }
-    if (center.x + radius + 5 > machine_limit->x ||
-        center.y + radius + 5 > machine_limit->y) {
-      fprintf(stderr, "With currently configured bedsize and printhead-offset, "
-              "only %d screws fit (radius is %.1fmm)\n"
-              "Configure your machine constraints with -L <x/y> -o < dx,dy> "
-              "(currently -L %.0f,%.0f -o %.0f,%.0f)\n", i, radius,
-              machine_limit->x, machine_limit->y,
-              head_offset->x, head_offset->y);
-      break;
     }
     printer->MoveTo(center, i > 0 ? total_height + 5 : 5);
     float layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
