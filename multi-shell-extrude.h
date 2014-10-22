@@ -29,6 +29,10 @@ inline Vector2D operator*(const Vector2D &a, float factor) {
 inline Vector2D operator/(const Vector2D &a, float div) {
   return Vector2D(a.x / div, a.y / div);
 }
+inline Vector2D rotate(const Vector2D &v, float angle) {
+  return Vector2D(v.x * cos(angle) - v.y * sin(angle),
+                  v.y * cos(angle) + v.x * sin(angle));
+}
 
 // Calculate euclidian distance.
 inline double distance(double dx, double dy, double dz) {

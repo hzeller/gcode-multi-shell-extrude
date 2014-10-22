@@ -39,10 +39,10 @@ public:
   virtual void GoZPos(double z) = 0;
 
   // Move to absolute position.
-  virtual void MoveTo(double x, double y, double z) = 0;
+  virtual void MoveTo(const Vector2D &pos, double z) = 0;
 
   // Extrude/"Line" to absolute position.
-  virtual void ExtrudeTo(double x, double y, double z) = 0;
+  virtual void ExtrudeTo(const Vector2D &pos, double z) = 0;
   virtual void SwitchFan(bool on) = 0;
   virtual double GetExtrusionDistance() = 0;
   // Nice-to-have. Mostly for visualization reasons, doesn't change

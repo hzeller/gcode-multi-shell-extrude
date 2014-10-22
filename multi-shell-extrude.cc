@@ -65,9 +65,9 @@ static void CreateBrim(const Polygon &target_polygon,
       current_point_from_center = current_point_from_center * spiral_adjust;
       Vector2D next_pos = center + centroid + current_point_from_center;
       if (is_first)
-        printer->MoveTo(next_pos.x, next_pos.y, z_height);
+        printer->MoveTo(next_pos, z_height);
       else
-        printer->ExtrudeTo(next_pos.x, next_pos.y, z_height);
+        printer->ExtrudeTo(next_pos, z_height);
       is_first = false;
     }
   }
@@ -135,7 +135,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
 
     if (state != prev_state) {
       polygon_len = CalcPolygonLen(p);
-      printer->MoveTo(p[0].x + center.x, p[0].y + center.y, height);
+      printer->MoveTo(p[0] + center, height);
     }
 
     for (int i = 0; i < (int) p.size(); ++i) {
@@ -146,14 +146,13 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
       }
       const double fraction = run_len / polygon_len;
       const double a = angle + fraction * rotation_per_layer;
-      const double x = p[i].x * cos(a) - p[i].y * sin(a);
-      const double y = p[i].y * cos(a) + p[i].x * sin(a);
+      const Vector2D point = rotate(p[i], a);
       const double z = height + layer_height * fraction;
       if (z < total_height - 0.20 * layer_height) {
-        printer->ExtrudeTo(x + center.x, y + center.y, z);
+        printer->ExtrudeTo(point + center, z);
       } else {
         // In the last layer, we stop extruding to have a smooth finish.
-        printer->MoveTo(x + center.x, y + center.y, z);
+        printer->MoveTo(point + center, z);
       }
     }
 
@@ -417,7 +416,7 @@ int main(int argc, char *argv[]) {
               head_offset->x, head_offset->y);
       break;
     }
-    printer->MoveTo(center.x, center.y, i > 0 ? total_height + 5 : 5);
+    printer->MoveTo(center, i > 0 ? total_height + 5 : 5);
     float layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec.get());
     printer->ResetExtrude();
