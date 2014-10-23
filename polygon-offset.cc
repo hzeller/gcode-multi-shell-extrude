@@ -12,8 +12,8 @@
 
 #include "third_party/clipper.hpp"
 
-// A path is centered if the rectangle aorund it is covering the origin.
-static bool is_centered(const ClipperLib::Path &path) {
+// A path is centered if the rectangle aorund it is covering the centroid.
+static bool is_centered(const Vector2D &centroid, const ClipperLib::Path &path) {
   int min_x = INT_MAX, min_y = INT_MAX;
   int max_x = INT_MIN, max_y = INT_MIN;
   for (std::size_t i = 0; i < path.size(); ++i) {
@@ -23,7 +23,8 @@ static bool is_centered(const ClipperLib::Path &path) {
     if (p.Y < min_y) min_y = p.Y;
     if (p.Y > max_y) max_y = p.Y;
   }
-  return (min_x < 0 && max_x > 0 && min_y < 0 && max_y > 0);
+  return (min_x < centroid.x && max_x > centroid.x
+          && min_y < centroid.y && max_y > centroid.y);
 }
 
 Polygon PolygonOffset(const Polygon &polygon, double offset,
@@ -33,10 +34,14 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   const float kAccuracy = 500;
 
   ClipperLib::Path path;
+  Vector2D centroid;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Vector2D &p = polygon[i];
-    path.push_back(ClipperLib::IntPoint(kAccuracy * p.x, kAccuracy * p.y));
+    Vector2D clipper_point = p * kAccuracy;
+    path.push_back(ClipperLib::IntPoint(clipper_point.x, clipper_point.y));
+    centroid = centroid + clipper_point;
   }
+  centroid = centroid / polygon.size();
 
   ClipperLib::Paths solutions;
   ClipperLib::ClipperOffset co(2.0, 5); // 5/kAccuracy mm
@@ -55,7 +60,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   // A polygon might become pieces when offset. Use the one that is centered.
   ClipperLib::Path &centered_polygon = solutions[0];
   for (std::size_t i = 0; i < solutions.size(); ++i) {
-    if (is_centered(solutions[i])) {
+    if (is_centered(centroid, solutions[i])) {
       centered_polygon = solutions[i];
       break;
     }

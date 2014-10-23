@@ -36,20 +36,23 @@ double CalcPolygonLen(const Polygon &polygon) {
   return len;
 }
 
-static void CreateBrim(const Polygon &target_polygon,
-                       Printer *printer,
-                       const Vector2D &center,
-                       double brim,
-                       double spiral_distance) {
+static void CreateBottomPlate(const Polygon &target_polygon,
+                              Printer *printer,
+                              const Vector2D &center_offset,
+                              float outer_distance, float inner_distance,
+                              float spiral_distance) {
   bool is_first = true;
-  printer->Comment("Create Brim\n");
+  printer->Comment("Create brim/vessel-bottom\n");
   printer->SetColor(0, 0.5, 0);
   const float z_height = spiral_distance/6;
-  for (/**/; brim > spiral_distance/2; brim -= spiral_distance) {
-    Polygon p = PolygonOffset(target_polygon, brim);
+  const Vector2D centroid = Centroid(target_polygon);
+  for (float poffset = outer_distance;
+       poffset > inner_distance; poffset -= spiral_distance) {
+    Polygon p = PolygonOffset(target_polygon, poffset);
+    if (p.size() == 0)
+      return;   // Natural end of moving towards center.
     float run_len = 0;
     const float polygon_len = CalcPolygonLen(p);
-    const Vector2D centroid = Centroid(p);
     // fudging a spiral: we want that the distance from the center
     // is one spiral_distance less in the end.
     float outer_distance = (p[0] - centroid).magnitude();
@@ -63,7 +66,7 @@ static void CreateBrim(const Polygon &target_polygon,
       const double fraction = run_len / polygon_len;
       float spiral_adjust = (outer_distance - fraction*spiral_distance)/outer_distance;
       current_point_from_center = current_point_from_center * spiral_adjust;
-      Vector2D next_pos = center + centroid + current_point_from_center;
+      Vector2D next_pos = center_offset + centroid + current_point_from_center;
       if (is_first)
         printer->MoveTo(next_pos, z_height);
       else
@@ -255,6 +258,7 @@ int main(int argc, char *argv[]) {
   FloatParam brim_spiral_factor(0.55, "brim-spiral-factor", 0,
                                "Distance between spirals in brim as factor of shell-thickness");
   FloatParam brim_smooth_radius(0, "brim-smooth-radius", 0, "Smoothing of brim connection to polygon to not get lost in inner details");
+  BoolParam vessel(false, "vessel", 0, "Make a vessel with closed bottom");
 
   ParamHeadline h4("Quality");
   FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
@@ -425,7 +429,7 @@ int main(int argc, char *argv[]) {
               initial_shell + i * shell_increment);
       continue;
     }
-    double radius = GetRadius(polygon);
+    const double radius = GetRadius(polygon);
     Vector2D screw_radius(radius + brim, radius + brim);
     if (!matryoshka) {
       // We start here.
@@ -444,8 +448,14 @@ int main(int argc, char *argv[]) {
       Polygon brim_polygon = polygon;
       if (brim_smooth_radius > 0)
         brim_polygon = PolygonOffset(PolygonOffset(polygon, brim_smooth_radius), -brim_smooth_radius);
-      CreateBrim(brim_polygon, printer, center, layers * spiral_layer_distance,
-                 spiral_layer_distance);
+      CreateBottomPlate(brim_polygon, printer, center,
+                        layers * spiral_layer_distance, spiral_layer_distance/2,
+                        spiral_layer_distance);
+    }
+    if (vessel) {
+      const float spiral_layer_distance = shell_thickness * brim_spiral_factor;
+      CreateBottomPlate(polygon, printer, center,
+                        0, -radius, spiral_layer_distance);
     }
     CreateExtrusion(polygon, printer, center, layer_height, total_height,
                     rotation_per_mm, lock_offset);
