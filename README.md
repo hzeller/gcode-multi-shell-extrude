@@ -56,6 +56,7 @@ without parameters.
 
      [ Printer Parameters ]
        --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')
+       --temperature <value>       : Extrusion temperature. (default: '190.00')
        --filament-diameter <value> : Diameter of filament (default: '1.75')
        --bed-size <value>      [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
        --head-offset <value>   [-o]: dx/dy offset per print. (default: '45.00,45.00')

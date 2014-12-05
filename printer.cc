@@ -14,8 +14,8 @@ namespace {
 class GCodePrinter : public Printer {
   static const double kRetractAmount = 2;
 public:
-  GCodePrinter(double extrusion_factor)
-    : filament_extrusion_factor_(extrusion_factor), extrude_dist_(0) {}
+  GCodePrinter(double extrusion_factor, double temperature)
+    : filament_extrusion_factor_(extrusion_factor), temperature_(temperature), extrude_dist_(0) {}
 
   virtual void Preamble(const Vector2D &machine_limit,
                         double feed_mm_per_sec) {
@@ -27,7 +27,7 @@ public:
     printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
     printf("M82 ; absolute E\nG92 E0 ; zero E\n");
     printf("G0 X%.1f Y10 Z30 ; move to center front\n", machine_limit.x/2);
-    printf("M109 S190\nM116\n");
+    printf("M109 S%.0f\nM116\n", temperature_);
     printf("G1 E3 ; squirt out some test in air\n"); // squirt out some test
     printf("G92 E0\n; test extrusion...\n");
     const double test_extrusion_from = 0.8 * machine_limit.x;
@@ -85,6 +85,7 @@ public:
 
 private:
   const double filament_extrusion_factor_;
+  const double temperature_;
   double last_x, last_y, last_z;
   double extrude_dist_;
 };
@@ -167,10 +168,10 @@ private:
 }  // end anonymous namespace.
 
 // Public interface
-Printer *CreateGCodePrinter(double extrusion_mm_to_e_axis_factor) {
-    return new GCodePrinter(extrusion_mm_to_e_axis_factor);
+Printer *CreateGCodePrinter(double extrusion_mm_to_e_axis_factor, double temp) {
+  return new GCodePrinter(extrusion_mm_to_e_axis_factor, temp);
 }
 Printer *CreatePostscriptPrinter(bool show_move_as_line,
                                  double line_thickness_mm) {
-    return new PostScriptPrinter(show_move_as_line, line_thickness_mm);
+  return new PostScriptPrinter(show_move_as_line, line_thickness_mm);
 }

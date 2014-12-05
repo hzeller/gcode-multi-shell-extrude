@@ -268,6 +268,7 @@ int main(int argc, char *argv[]) {
 
   ParamHeadline h5("Printer Parameters");
   FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
+  FloatParam temperature(190, "temperature", 0, "Extrusion temperature.");
   FloatParam filament_diameter(1.75, "filament-diameter", 0, "Diameter of filament");
   Vector2DParam machine_limit(Vector2D(150.0,150.0), "bed-size",    'L',  "x/y size limit of your printbed.");
   Vector2DParam head_offset(Vector2D(45.0,45.0),"head-offset", 'o', "dx/dy offset per print.");
@@ -378,7 +379,7 @@ int main(int argc, char *argv[]) {
     printer = CreatePostscriptPrinter(!matryoshka,
                                       kPostscriptLineThickFactor * shell_thickness);
   } else {
-    printer = CreateGCodePrinter(filament_extrusion_factor);
+    printer = CreateGCodePrinter(filament_extrusion_factor, temperature);
   }
   printer->Preamble(machine_limit, feed_mm_per_sec);
 
