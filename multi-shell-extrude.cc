@@ -36,6 +36,13 @@ double CalcPolygonLen(const Polygon &polygon) {
   return len;
 }
 
+// Get temperature for layer. Right now, this is a simple sin(), but
+// could be something more pleasingly erratic, such as Perlin noise.
+static float GetLayerTemperature(float base_temp, float variation,
+                                 float height, float noise_feature) {
+  return sin(2 * M_PI * height / noise_feature) * variation + base_temp;
+}
+
 static void CreateBottomPlate(const Polygon &target_polygon,
                               Printer *printer,
                               const Vector2D &center_offset,
@@ -82,7 +89,8 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
                             const Vector2D &center,
                             double layer_height, double total_height,
                             double rotation_per_mm,
-                            double lock_offset) {
+                            double lock_offset,
+                            float base_temp, float temp_variation) {
   printer->Comment("Center X=%.1f Y=%.1f\n", center.x, center.y);
   printer->SetColor(0, 0, 0);
   const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
@@ -102,6 +110,8 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
   enum State prev_state;
   for (height = 0, angle=0; height < total_height;
        height += layer_height, angle += rotation_per_layer) {
+    printer->SetTemperature(GetLayerTemperature(base_temp, temp_variation,
+                                                height, 30));
     prev_state = state;
 
     // Experimental. Locking screws do have smaller/larger diameter at their
@@ -269,6 +279,7 @@ int main(int argc, char *argv[]) {
   ParamHeadline h5("Printer Parameters");
   FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
   FloatParam temperature(190, "temperature", 0, "Extrusion temperature.");
+  FloatParam temp_variation(0, "temperature-variation", 0, "Temperature variation around --temperature, e.g. to get dark lines in wood filament.");
   FloatParam filament_diameter(1.75, "filament-diameter", 0, "Diameter of filament");
   Vector2DParam machine_limit(Vector2D(150.0,150.0), "bed-size",    'L',  "x/y size limit of your printbed.");
   Vector2DParam head_offset(Vector2D(45.0,45.0),"head-offset", 'o', "dx/dy offset per print.");
@@ -459,7 +470,8 @@ int main(int argc, char *argv[]) {
                         0, -radius, spiral_layer_distance);
     }
     CreateExtrusion(polygon, printer, center, layer_height, total_height,
-                    rotation_per_mm, lock_offset);
+                    rotation_per_mm, lock_offset,
+                    temperature, temp_variation);
     const double travel = printer->GetExtrusionDistance();  // since last reset.
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
