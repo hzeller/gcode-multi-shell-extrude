@@ -432,8 +432,8 @@ int main(int argc, char *argv[]) {
   Vector2D center = edge_offset;
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
-    Polygon polygon = PolygonOffset(base_polygon,
-                                    initial_shell + i * shell_increment);
+    const float current_offset = initial_shell + i * shell_increment;
+    Polygon polygon = PolygonOffset(base_polygon, current_offset);
     if (polygon.size() == 0) {
       fprintf(stderr, "Polygon offset %.1f results in empty polygon\n",
               initial_shell + i * shell_increment);
@@ -446,7 +446,9 @@ int main(int argc, char *argv[]) {
       center = center + screw_radius;
     }
     printer->MoveTo(center, i > 0 ? total_height + 5 : 5);
-    float layer_feedrate = CalcPolygonLen(polygon) / min_layer_time;
+    const float polygon_len = CalcPolygonLen(polygon);
+    const float area = polygon_len * total_height * 2;  // inside and out.
+    float layer_feedrate =  polygon_len / min_layer_time;
     layer_feedrate = std::min(layer_feedrate, feed_mm_per_sec.get());
     printer->ResetExtrude();
     printer->SetSpeed(layer_feedrate);
@@ -458,6 +460,7 @@ int main(int argc, char *argv[]) {
       printer->SetColor(0.5, 0, 0.5);
       CreateBottomPlate(polygon, printer, center,
                         0, -radius, spiral_layer_distance);
+      // TODO: make this multi-layer.
       printer->GoZPos(2);
     }
 
@@ -485,10 +488,14 @@ int main(int argc, char *argv[]) {
     if (!matryoshka) {
       center = center + screw_radius + head_offset;
     }
+    if (!do_postscript) {
+      fprintf(stderr, "Screw-surface (out+in) for offset %.1f: ~%.1f cm²\n",
+              current_offset, area / 100);
+    }
   }
 
   printer->Postamble();
-  if (total_time > 0) {  // doesn't make sense to print for PostScript
+  if (!do_postscript) {  // doesn't make sense to print for PostScript
     fprintf(stderr, "Total time >= %.0f seconds; %.2fm filament\n",
             total_time, total_travel * filament_extrusion_factor / 1000);
   }
