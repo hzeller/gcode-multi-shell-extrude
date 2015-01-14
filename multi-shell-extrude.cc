@@ -20,7 +20,7 @@
 
 // 1.0 to display line thickness := shell-thickness.
 // Smaller to better distinguish lines.
-static float kPostscriptLineThickFactor = 0.8;
+static float kPostscriptLineThickFactor = 0.1;
 
 // The total length of distance going through a polygon.
 double CalcPolygonLen(const Polygon &polygon) {
@@ -42,8 +42,6 @@ static void CreateBottomPlate(const Polygon &target_polygon,
                               float outer_distance, float inner_distance,
                               float spiral_distance) {
   bool is_first = true;
-  printer->Comment("Create brim/vessel-bottom\n");
-  printer->SetColor(0, 0.5, 0);
   const float z_height = spiral_distance/6;
   const Vector2D centroid = Centroid(target_polygon);
   for (float poffset = outer_distance;
@@ -442,20 +440,26 @@ int main(int argc, char *argv[]) {
     printer->SetSpeed(layer_feedrate);
     printer->Comment("Screw #%d, polygon-offset=%.1f\n",
                      i+1, initial_shell + i * shell_increment);
+    if (vessel) {
+      const float spiral_layer_distance = shell_thickness * brim_spiral_factor;
+      printer->Comment("Create vessel-bottom\n");
+      printer->SetColor(0.5, 0, 0.5);
+      CreateBottomPlate(polygon, printer, center,
+                        0, -radius, spiral_layer_distance);
+      printer->GoZPos(2);
+    }
+
     if (brim > 0) {
       const float spiral_layer_distance = shell_thickness * brim_spiral_factor;
       int layers = (int) ceil(brim / spiral_layer_distance);
       Polygon brim_polygon = polygon;
       if (brim_smooth_radius > 0)
         brim_polygon = PolygonOffset(PolygonOffset(polygon, brim_smooth_radius), -brim_smooth_radius);
+      printer->Comment("Create brim\n");
+      printer->SetColor(0, 0.5, 0);
       CreateBottomPlate(brim_polygon, printer, center,
                         layers * spiral_layer_distance, spiral_layer_distance/2,
                         spiral_layer_distance);
-    }
-    if (vessel) {
-      const float spiral_layer_distance = shell_thickness * brim_spiral_factor;
-      CreateBottomPlate(polygon, printer, center,
-                        0, -radius, spiral_layer_distance);
     }
     CreateExtrusion(polygon, printer, center, layer_height, total_height,
                     rotation_per_mm, lock_offset);

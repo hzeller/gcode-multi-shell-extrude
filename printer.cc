@@ -130,9 +130,9 @@ public:
         ColorSwitch(0, 0, 0, 0.9);  // blue move color
         in_move_color_ = true;
       }
-      printf("%.2f %.2f lineto\n", pos.x, pos.y);
+      printf("%.3f %.3f lineto\n", pos.x, pos.y);
     } else {
-      printf("%.2f %.2f moveto\n", pos.x, pos.y);
+      printf("%.3f %.3f moveto\n", pos.x, pos.y);
     }
   }
   virtual void ExtrudeTo(const Vector2D &pos, double z) {
@@ -140,7 +140,7 @@ public:
       ColorSwitch(line_thickness_, r_, g_, b_);
       in_move_color_ = false;
     }
-    printf("%.2f %.2f extrude-to\n", pos.x, pos.y);
+    printf("%.3f %.3f extrude-to\n", pos.x, pos.y);
   }
   virtual void SwitchFan(bool on) {}
   virtual double GetExtrusionDistance() { return 0; }

@@ -31,20 +31,21 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
                       OffsetType type) {
   // Converting float to clipper integer values. Make sure
   // to stay within limits.
-  const float kAccuracy = 500;
+  const float kResolution = 1e4;
+  const float kAccuracy = 0.01; // mm : cutting corners with this accuracy
 
   ClipperLib::Path path;
   Vector2D centroid;
   for (std::size_t i = 0; i < polygon.size(); ++i) {
     const Vector2D &p = polygon[i];
-    Vector2D clipper_point = p * kAccuracy;
+    Vector2D clipper_point = p * kResolution;
     path.push_back(ClipperLib::IntPoint(clipper_point.x, clipper_point.y));
     centroid = centroid + clipper_point;
   }
   centroid = centroid / polygon.size();
 
   ClipperLib::Paths solutions;
-  ClipperLib::ClipperOffset co(2.0, 5); // 5/kAccuracy mm
+  ClipperLib::ClipperOffset co(2.0, kAccuracy * kResolution);
   ClipperLib::JoinType join = ClipperLib::jtRound;
   switch (type) {
   case kOffsetRound:  join = ClipperLib::jtRound; break;
@@ -52,7 +53,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   case kOffsetMiter:  join = ClipperLib::jtMiter; break;
   }
   co.AddPath(path, join, ClipperLib::etClosedPolygon);
-  co.Execute(solutions, kAccuracy * offset);
+  co.Execute(solutions, kResolution * offset);
 
   if (solutions.size() == 0)  // Nothing left.
     return Polygon();
@@ -69,7 +70,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
   Polygon tmp;
   for (std::size_t i = 0; i < centered_polygon.size(); ++i) {
     const ClipperLib::IntPoint &p = centered_polygon[i];
-    tmp.push_back(Vector2D(p.X / kAccuracy, p.Y / kAccuracy));
+    tmp.push_back(Vector2D(p.X / kResolution, p.Y / kResolution));
   }
 
   // The way the clipper library works, the offset polygon might start at a
