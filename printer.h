@@ -31,6 +31,7 @@ public:
                     double feed_mm_per_sec) = 0;
   virtual void Postamble() = 0;
   virtual void Comment(const char *fmt, ...) PRINTF_FMT_CHECK(2, 3) = 0;
+  virtual void SetTemperature(double temperature) = 0;
   virtual void SetSpeed(double feed_mm_per_sec) = 0;
   virtual void ResetExtrude() = 0;
   virtual void Retract() = 0;
@@ -52,7 +53,8 @@ public:
 // Create a printer that outputs GCode to stdout.
 // "extrusion_mm_to_e_axis_factor" translates mm extruded length to E-axis
 // output.
-Printer *CreateGCodePrinter(double extrusion_mm_to_e_axis_factor);
+Printer *CreateGCodePrinter(double extrusion_mm_to_e_axis_factor,
+                            double temperature);
 
 // Create printer that outputs PostScript to stdout.
 // If "show_move_as_line" is true, visualizes moves as blue lines.
