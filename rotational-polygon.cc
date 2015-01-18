@@ -60,7 +60,7 @@ Polygon RotationalPolygon(const char *fun_init, double inner_radius,
   Polygon result;
   const double max_r = inner_radius + thread_depth;
   PolarFunction fun(fun_init);
-  const double max_error = 0.15 / 2;  // maximum error to tolerate
+  const double max_error = 0.05 / 2;  // maximum error to tolerate
   // Maximum lenght of one edge of our cylinder, that should not differ more
   // than max_error in the middle. Half a segment is a nice perpendicular
   // triangle
