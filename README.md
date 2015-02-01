@@ -41,12 +41,17 @@ without parameters.
        --height <value>        [-h]: Total height to be printed (must set) (default: '-1.00')
        --pitch <value>         [-p]: Millimeter height a full turn takes. Negative for left-turning screw; 0 for straight hull. (default: '30.00')
        --size <value>          [-s]: Polygon sizing parameter. Means radius if from --screw-template, factor for --polygon-file (default: '10.00')
-       --center-offset <value>     : Center offset into polygon. (default: '0.00,0.00')
+       --center-offset <value>     : Rotation-center offset into polygon. (default: '0.00,0.00')
+       --auto-center               : Automatically center around centroid. (default: 'off')
        --pump <value>              : Pump polygon as if the center was not a dot, but a circle of this radius (default: '0.00')
        --number <value>        [-n]: Number of screws to be printed (default: '2')
        --start-offset <value>      : Initial offset for first polygon (default: '0.00')
        --offset <value>        [-R]: Offset increment between screws - the clearance (default: '1.20')
        --lock-offset <value>       : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
+       --brim <value>              : Add brim of this size on the bottom for better stability (default: '0.00')
+       --brim-spiral-factor <value>: Distance between spirals in brim as factor of shell-thickness (default: '0.55')
+       --brim-smooth-radius <value>: Smoothing of brim connection to polygon to not get lost in inner details (default: '0.00')
+       --vessel                    : Make a vessel with closed bottom (default: 'off')
 
      [ Quality ]
        --layer-height <value>  [-l]: Height of each layer (default: '0.16')
@@ -57,6 +62,7 @@ without parameters.
      [ Printer Parameters ]
        --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')
        --temperature <value>       : Extrusion temperature. (default: '190.00')
+       --temperature-variation <value>   : Temperature variation around --temperature, e.g. to get dark lines in wood filament. (default: '0.00')
        --filament-diameter <value> : Diameter of filament (default: '1.75')
        --bed-size <value>      [-L]: x/y size limit of your printbed. (default: '150.00,150.00')
        --head-offset <value>   [-o]: dx/dy offset per print. (default: '45.00,45.00')
