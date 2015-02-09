@@ -91,6 +91,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
                             float base_temp, float temp_variation) {
   printer->Comment("Center X=%.1f Y=%.1f\n", center.x, center.y);
   printer->SetColor(0, 0, 0);
+  const float z_bottom_offset = layer_height/2;
   const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
   printer->SwitchFan(false);
@@ -146,7 +147,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
 
     if (state != prev_state) {
       polygon_len = CalcPolygonLen(p);
-      printer->MoveTo(p[0] + center, height);
+      printer->MoveTo(p[0] + center, height + z_bottom_offset);
     }
 
     for (int i = 0; i < (int) p.size(); ++i) {
@@ -160,10 +161,10 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
       const Vector2D point = rotate(p[i], a);
       const double z = height + layer_height * fraction;
       if (z < total_height - 0.20 * layer_height) {
-        printer->ExtrudeTo(point + center, z);
+        printer->ExtrudeTo(point + center, z + z_bottom_offset);
       } else {
         // In the last layer, we stop extruding to have a smooth finish.
-        printer->MoveTo(point + center, z);
+        printer->MoveTo(point + center, z + z_bottom_offset);
       }
     }
 
