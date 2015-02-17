@@ -34,8 +34,8 @@ public:
     const double test_extrusion_from = 0.8 * machine_limit.x;
     const double test_extrusion_to = 0.2 * machine_limit.x;
     SetSpeed(feed_mm_per_sec / 3);
-    MoveTo(Vector2D(test_extrusion_from, 10), 0);
-    ExtrudeTo(Vector2D(test_extrusion_to, 10), 0);
+    MoveTo(Vector2D(test_extrusion_from, 10), 0.1);
+    ExtrudeTo(Vector2D(test_extrusion_to, 10), 0.1);
     Retract();
     GoZPos(5);
   }
