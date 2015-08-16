@@ -24,17 +24,18 @@ public:
 
   virtual void Init(const Vector2D &machine_limit,
                     double feed_mm_per_sec) {
-    printf("G28\nG1 F%.1f\n", feed_mm_per_sec * 60);
+    printf("G28 X0 Y0\nG28 Z0\nG1 F%.1f\n", feed_mm_per_sec * 60);
     printf("M82 ; absolute E\nG92 E0 ; zero E\n");
-    printf("G0 X%.1f Y10 Z30 ; move to center front\n", machine_limit.x/2);
+    printf("G0 X%.1f Y10 Z30 F6000; move to center front\n", machine_limit.x/2);
     SetTemperature(temperature_);
     printf("M109 S%.0f\nM116\n", temperature_);
     printf("G1 E3 ; squirt out some test in air\n"); // squirt out some test
     printf("G92 E0\n; test extrusion...\n");
-    const double test_extrusion_from = 0.8 * machine_limit.x;
+    const double test_extrusion_from = 0.3 * machine_limit.x;
     const double test_extrusion_to = 0.2 * machine_limit.x;
-    SetSpeed(feed_mm_per_sec / 3);
+    SetSpeed(300.0);
     MoveTo(Vector2D(test_extrusion_from, 10), 0.1);
+    SetSpeed(feed_mm_per_sec / 3);
     ExtrudeTo(Vector2D(test_extrusion_to, 10), 0.1);
     Retract();
     GoZPos(5);
@@ -42,7 +43,7 @@ public:
   virtual void Postamble() {
     printf("M104 S0 ; hotend off\n");
     printf("M106 S0 ; fan off\n");
-    printf("G28 X0 Y0\n");
+    printf("G28 X0 Y0\n");  // We keep z-axis as is.
     printf("G92 E0\n");
     printf("M84\n");
   }

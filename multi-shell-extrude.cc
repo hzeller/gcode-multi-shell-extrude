@@ -49,7 +49,8 @@ static void CreateBottomPlate(const Polygon &target_polygon,
                               float outer_distance, float inner_distance,
                               float spiral_distance) {
   bool is_first = true;
-  const float z_height = spiral_distance/6;
+  // Initial height.
+  const float z_height = spiral_distance/2;
   const Vector2D centroid = Centroid(target_polygon);
   for (float poffset = outer_distance;
        poffset > inner_distance; poffset -= spiral_distance) {
