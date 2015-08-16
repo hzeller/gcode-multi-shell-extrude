@@ -18,10 +18,6 @@
 #include "printer.h"
 #include "config-values.h"
 
-// 1.0 to display line thickness := shell-thickness.
-// Smaller to better distinguish lines.
-static float kPostscriptLineThickFactor = 0.1;
-
 // The total length of distance going through a polygon.
 double CalcPolygonLen(const Polygon &polygon) {
   double len = 0;
@@ -289,6 +285,7 @@ int main(int argc, char *argv[]) {
   // Output options
   ParamHeadline h6("Output Options");
   BoolParam do_postscript(false, "postscript", 'P', "PostScript output instead of GCode output");
+  FloatParam postscript_thick_factor(1.0, "ps-thick-factor", 0, "Line thickness factor for shell size. Chooser smaller (e.g. 0.1) to better see overlaps");
   BoolParam matryoshka(false,    "nested",      0, "For PostScript: show nested (Matryoshka doll style)");
 
   if (!SetParametersFromCommandline(argc, argv)) {
@@ -394,7 +391,7 @@ int main(int argc, char *argv[]) {
                             3 * layer_height); // not needed more.
     // no move lines w/ Matryoshka
     printer = CreatePostscriptPrinter(!matryoshka,
-                                      kPostscriptLineThickFactor * shell_thickness);
+                                      postscript_thick_factor * shell_thickness);
   } else {
     printer = CreateGCodePrinter(filament_extrusion_factor, temperature);
   }
