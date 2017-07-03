@@ -12,7 +12,7 @@
 
 namespace {
 class GCodePrinter : public Printer {
-  static const double kRetractAmount = 2;
+  static const double kRetractAmount;
 public:
   GCodePrinter(double extrusion_factor, double temperature)
     : filament_extrusion_factor_(extrusion_factor), temperature_(temperature), extrude_dist_(0) {}
@@ -96,6 +96,7 @@ private:
   double last_x, last_y, last_z;
   double extrude_dist_;
 };
+const double GCodePrinter::kRetractAmount = 2;
 
 class PostScriptPrinter : public Printer {
 public:
