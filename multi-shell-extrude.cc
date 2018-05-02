@@ -275,6 +275,7 @@ int main(int argc, char *argv[]) {
 
   ParamHeadline h5("Printer Parameters");
   FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
+  FloatParam bed_temp(-1, "bed-temp", 0, "Bed temperature.");
   FloatParam temperature(190, "temperature", 0, "Extrusion temperature.");
   FloatParam temp_variation(0, "temperature-variation", 0, "Temperature variation around --temperature, e.g. to get dark lines in wood filament.");
   FloatParam filament_diameter(1.75, "filament-diameter", 0, "Diameter of filament");
@@ -328,7 +329,7 @@ int main(int argc, char *argv[]) {
     center_offset = Centroid(input_polygon);
     center_offset = Vector2D(0,0) - center_offset;
   }
-  
+
   // .. and offsetting
   if (center_offset->x != 0 || center_offset->y != 0) {
     input_polygon = OffsetCenter(input_polygon,
@@ -393,7 +394,8 @@ int main(int argc, char *argv[]) {
     printer = CreatePostscriptPrinter(!matryoshka,
                                       postscript_thick_factor * shell_thickness);
   } else {
-    printer = CreateGCodePrinter(filament_extrusion_factor, temperature);
+    printer = CreateGCodePrinter(filament_extrusion_factor, temperature,
+                                 bed_temp);
   }
   printer->Preamble(machine_limit, feed_mm_per_sec);
 

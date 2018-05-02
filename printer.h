@@ -54,7 +54,7 @@ public:
 // "extrusion_mm_to_e_axis_factor" translates mm extruded length to E-axis
 // output.
 Printer *CreateGCodePrinter(double extrusion_mm_to_e_axis_factor,
-                            double temperature);
+                            double temperature, double bed_temp);
 
 // Create printer that outputs PostScript to stdout.
 // If "show_move_as_line" is true, visualizes moves as blue lines.
