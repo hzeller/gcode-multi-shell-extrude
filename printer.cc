@@ -30,11 +30,14 @@ public:
     printf("G0 X%.1f Y10 Z30 F6000 (move to center front)\n",
            machine_limit.x/2);
     SetTemperature(temperature_);
-    if (bed_temp_ > 0 && bed_temp_ < 120) {
+    const bool with_heated_bed = bed_temp_ > 0 && bed_temp_ < 120;
+    if (with_heated_bed) {
       printf("M140 S%.0f\n", bed_temp_);
     }
     printf("M109 S%.0f\nM116 (wait for temp)\n", temperature_);
-    if (bed_temp_ > 0) printf("M190 (this is how Marlin waits for bed-temp)\n");
+    if (with_heated_bed) {
+      printf("M190 S%.0f (this is how Marlin waits for bed-temp)\n", bed_temp_);
+    }
     printf("G1 E3 (squirt out some test in air)\n"); // squirt out some test
     printf("G92 E0\n(test extrusion...)\n");
     const double test_extrusion_from = 0.3 * machine_limit.x;
