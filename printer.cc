@@ -20,21 +20,23 @@ public:
 
   virtual void Preamble(const Vector2D &machine_limit,
                         double feed_mm_per_sec) {
-    printf("; G-Code\n\n");
+    printf("(G-Code)\n\n");
   }
 
   virtual void Init(const Vector2D &machine_limit,
                     double feed_mm_per_sec) {
     printf("G28 X0 Y0\nG28 Z0\nG1 F%.1f\n", feed_mm_per_sec * 60);
-    printf("M82 ; absolute E\nG92 E0 ; zero E\n");
-    printf("G0 X%.1f Y10 Z30 F6000; move to center front\n", machine_limit.x/2);
+    printf("M82 (absolute E)\nG92 E0 (zero E)\n");
+    printf("G0 X%.1f Y10 Z30 F6000 (move to center front)\n",
+           machine_limit.x/2);
     SetTemperature(temperature_);
     if (bed_temp_ > 0 && bed_temp_ < 120) {
       printf("M140 S%.0f\n", bed_temp_);
     }
-    printf("M109 S%.0f\nM116\n", temperature_);
-    printf("G1 E3 ; squirt out some test in air\n"); // squirt out some test
-    printf("G92 E0\n; test extrusion...\n");
+    printf("M109 S%.0f\nM116 (wait for temp)\n", temperature_);
+    if (bed_temp_ > 0) printf("M190 (this is how Marlin waits for bed-temp)\n");
+    printf("G1 E3 (squirt out some test in air)\n"); // squirt out some test
+    printf("G92 E0\n(test extrusion...)\n");
     const double test_extrusion_from = 0.3 * machine_limit.x;
     const double test_extrusion_to = 0.2 * machine_limit.x;
     SetSpeed(300.0);
@@ -45,8 +47,9 @@ public:
     GoZPos(5);
   }
   virtual void Postamble() {
-    printf("M104 S0 ; hotend off\n");
-    printf("M106 S0 ; fan off\n");
+    printf("M104 S0 (hotend off)\n");
+    printf("M140 S0 (heated bed off)\n");
+    printf("M106 S0 (fan off)\n");
     printf("G28 X0 Y0\n");  // We keep z-axis as is.
     printf("G92 E0\n");
     printf("M84\n");
@@ -58,12 +61,12 @@ public:
   }
   virtual double GetExtrusionDistance() { return extrude_dist_; }
   virtual void Comment(const char *fmt, ...) {
-    printf("; ");
+    printf("; ");   // TODO: not all printers might be able to deal with ';'
     va_list ap; va_start(ap, fmt); vprintf(fmt, ap); va_end(ap);
   }
 
   virtual void SetSpeed(double feed_mm_per_sec) {
-    printf("G1 F%.1f  ; feedrate=%.1fmm/s\n", feed_mm_per_sec * 60,
+    printf("G1 F%.1f  (feedrate=%.1fmm/s)\n", feed_mm_per_sec * 60,
            feed_mm_per_sec);
   }
   virtual void GoZPos(double z) {
@@ -81,14 +84,14 @@ public:
   }
   virtual void ResetExtrude() {
     printf("M83\n"  // extruder relative mode
-           "G1 E%.1f ; filament back to nozzle tip\n"
+           "G1 E%.1f (filament back to nozzle tip)\n"
            "M82\n", // extruder absolute mode
            1.1 * kRetractAmount);  // fudging... a bit more squeeze.
-    printf("G92 E0  ; start extrusion\n");
+    printf("G92 E0  (start extrusion)\n");
     extrude_dist_ = 0;
   }
   virtual void Retract() {
-    printf("M83\nG1 E%.1f ; retract\nM82\n", -kRetractAmount);
+    printf("M83\nG1 E%.1f (retract)\nM82\n", -kRetractAmount);
   }
   virtual void SwitchFan(bool on) {
     printf("M106 S%d\n", on ? 255 : 0);
