@@ -62,6 +62,7 @@ Synopsis:
 
 [ Printer Parameters ]
     --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')
+    --bed-temp <value>          : Bed temperature. (default: '-1.00')
     --temperature <value>       : Extrusion temperature. (default: '190.00')
     --temperature-variation <value>   : Temperature variation around --temperature, e.g. to get dark lines in wood filament. (default: '0.00')
     --filament-diameter <value> : Diameter of filament (default: '1.75')
@@ -140,7 +141,7 @@ Pro-tip: you can use gnuplot to visualize polygons while you are working on them
 
      $ gnuplot
              G N U P L O T
-             Version 4.6 patchlevel 4    last modified 2013-10-02 
+             Version 4.6 patchlevel 4    last modified 2013-10-02
      gnuplot> plot "sample/snowflake.poly" with lines
      gnuplot>
 
@@ -280,4 +281,3 @@ Have Fun!
 [many-screws]: ./img/many-screws.png
 [steep-pitch]: ./img/steep-pitch.png
 [orange-blue]: ./img/orange-blue.png
-
