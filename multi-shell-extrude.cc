@@ -72,42 +72,50 @@ static void CreateBottomPlate(const Polygon &target_polygon,
       if (is_first)
         printer->MoveTo(next_pos, z_height);
       else
-        printer->ExtrudeTo(next_pos, z_height);
+        printer->ExtrudeTo(next_pos, z_height, 1.0);
       is_first = false;
     }
   }
 }
 
+struct ExtrusionParams {
+  double feedrate;
+  double layer_height;
+  double total_height;
+  double rotation_per_mm;
+  double lock_offset;
+  double fan_on_height;
+  double elephant_foot_multiplier;
+
+  float base_temp;
+  float temp_variation;
+};
+
 // Requires: Polygon with centroid on (0,0)
-static void CreateExtrusion(const Polygon &extrusion_polygon,
-                            Printer *printer,
+static void CreateExtrusion(const Polygon &extrusion_polygon, Printer *printer,
                             const Vector2D &center,
-                            double layer_height, double total_height,
-                            double rotation_per_mm,
-                            double lock_offset,
-                            float base_temp, float temp_variation) {
+                            const ExtrusionParams &params) {
   printer->Comment("Center X=%.1f Y=%.1f\n", center.x, center.y);
   printer->SetColor(0, 0, 0);
-  const float z_bottom_offset = layer_height/2;
-  const double rotation_per_layer = layer_height * rotation_per_mm * 2 * M_PI;
+  const float z_bottom_offset = params.layer_height / 2;
+  const double rotation_per_layer =
+      params.layer_height * params.rotation_per_mm * 2 * M_PI;
   bool fan_is_on = false;
   printer->SwitchFan(false);
   double height = 0;
   double angle = 0;
   double run_len = 0;
-  const bool do_lock = (lock_offset > 0);
+  const bool do_lock = (params.lock_offset > 0);
   double polygon_len = 0;
-  Polygon p;  // active polygon.
+  Polygon p; // active polygon.
   static const int kLockOverlap = 3;
-  enum State {
-    START, WIDE_LOCK, NORMAL, NARROW_LOCK
-  };
+  enum State { START, WIDE_LOCK, NORMAL, NARROW_LOCK };
   enum State state = START;
   enum State prev_state;
-  for (height = 0, angle=0; height < total_height;
-       height += layer_height, angle += rotation_per_layer) {
-    printer->SetTemperature(GetLayerTemperature(base_temp, temp_variation,
-                                                height, 30));
+  for (height = 0, angle = 0; height < params.total_height;
+       height += params.layer_height, angle += rotation_per_layer) {
+    printer->SetTemperature(GetLayerTemperature(
+        params.base_temp, params.temp_variation, height, 30));
     prev_state = state;
 
     // Experimental. Locking screws do have smaller/larger diameter at their
@@ -119,7 +127,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
     case START:
       if (do_lock) {
         state = WIDE_LOCK;
-        p = PolygonOffset(extrusion_polygon, lock_offset);
+        p = PolygonOffset(extrusion_polygon, params.lock_offset);
       } else {
         state = NORMAL;
         p = extrusion_polygon;
@@ -134,39 +142,49 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
       break;
 
     case NORMAL:
-      if (do_lock && height > total_height - kLockOverlap) {
-        p = PolygonOffset(extrusion_polygon, -lock_offset);
+      if (do_lock && height > params.total_height - kLockOverlap) {
+        p = PolygonOffset(extrusion_polygon, -params.lock_offset);
         state = NARROW_LOCK;
       }
       break;
-    case NARROW_LOCK: /* terminal state */ break;
+    case NARROW_LOCK: /* terminal state */
+      break;
     }
 
     if (state != prev_state) {
       polygon_len = CalcPolygonLen(p);
+      // First move slowly, so that we wipe potential nozzle leak extrusion
+      printer->SetSpeed(std::min(params.feedrate / 3, 15.0));
       printer->MoveTo(p[0] + center, height + z_bottom_offset);
+      printer->SetSpeed(params.feedrate);
     }
 
-    for (int i = 0; i < (int) p.size(); ++i) {
+    for (int i = 0; i < (int)p.size(); ++i) {
       if (i == 0) {
         run_len = 0;
       } else {
-        run_len += distance(p[i].x - p[i-1].x, p[i].y - p[i-1].y, 0);
+        run_len += distance(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y, 0);
       }
       const double fraction = run_len / polygon_len;
       const double a = angle + fraction * rotation_per_layer;
       const Vector2D point = rotate(p[i], a);
-      const double z = height + layer_height * fraction;
-      if (z < total_height - 0.20 * layer_height) {
-        printer->ExtrudeTo(point + center, z + z_bottom_offset);
+      const double z = height + params.layer_height * fraction;
+      // Start only extruding when min z-offset reached and also stop extruding
+      // at the top to wipe off excess
+      if (z > z_bottom_offset / 2 &&
+          z < params.total_height - 0.30 * params.layer_height) {
+        printer->ExtrudeTo(point + center, z,
+                           (height < 2*params.layer_height)
+                           ? params.elephant_foot_multiplier
+                           : 1.0);
       } else {
         // In the last layer, we stop extruding to have a smooth finish.
-        printer->MoveTo(point + center, z + z_bottom_offset);
+        printer->MoveTo(point + center, z);
       }
     }
 
-    if (height > 1.5 && !fan_is_on) {
-      printer->SwitchFan(true);  // 1.5mm reached - fan on.
+    if (height > params.fan_on_height && !fan_is_on) {
+      printer->SwitchFan(true); // reached fan-on height: switch on.
       fan_is_on = true;
     }
   }
@@ -174,8 +192,7 @@ static void CreateExtrusion(const Polygon &extrusion_polygon,
 
 Polygon OffsetCenter(const Polygon& polygon, double x_offset, double y_offset) {
   Polygon result;
-  for (std::size_t i = 0; i < polygon.size(); ++i) {
-    const Vector2D &p = polygon[i];
+  for (const Vector2D &p : polygon) {
     result.push_back(Vector2D(p.x + x_offset, p.y + y_offset));
   }
   return result;
@@ -221,8 +238,7 @@ Polygon RadialPumpPolygon(const Polygon& polygon, double pump_r) {
   if (pump_r <= 0)
     return polygon;
   Polygon result;
-  for (std::size_t i = 0; i < polygon.size(); ++i) {
-    const Vector2D &p = polygon[i];
+  for (const Vector2D &p : polygon) {
     double from_center = distance(p.x, p.y, 0);
     double stretch = (from_center + pump_r) / from_center;
     result.push_back(Vector2D(p.x * stretch, p.y * stretch));
@@ -271,7 +287,10 @@ int main(int argc, char *argv[]) {
   FloatParam layer_height (0.16,  "layer-height", 'l', "Height of each layer");
   FloatParam shell_thickness(0.8, "shell-thickness", 0, "Thickness of shell");
   FloatParam feed_mm_per_sec(100, "feed-rate",    'f', "maximum, in mm/s");
-  FloatParam min_layer_time(8,    "layer-time",   'T', "Min time per layer; upper bound for feed-rate");
+  FloatParam min_layer_time(3,    "layer-time",   'T', "Min time per layer; upper bound for feed-rate");
+  FloatParam fan_on (0.3,  "fan-on-height", 0, "Height to switch on fan");
+  FloatParam elephant_foot_multiplier (0.9,  "slender-elephant", 0, "Extrusion multiplier at first two layer heights to prevent elephant foot");
+  FloatParam retract_amount (1.2, "retract", 0, "Millimeter of retract");
 
   ParamHeadline h5("Printer Parameters");
   FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
@@ -394,8 +413,8 @@ int main(int argc, char *argv[]) {
     printer = CreatePostscriptPrinter(!matryoshka,
                                       postscript_thick_factor * shell_thickness);
   } else {
-    printer = CreateGCodePrinter(filament_extrusion_factor, temperature,
-                                 bed_temp);
+    printer = CreateGCodePrinter(filament_extrusion_factor, retract_amount,
+                                 temperature, bed_temp);
   }
   printer->Preamble(machine_limit, feed_mm_per_sec);
 
@@ -436,6 +455,7 @@ int main(int argc, char *argv[]) {
   double total_time = 0;
   double total_travel = 0;
 
+  constexpr float kHoverPos = 10.0;  // Hovering over screws while moving
   Vector2D center = edge_offset;
   printer->SetSpeed(feed_mm_per_sec);  // initial speed.
   for (int i = 0; i < screw_count; ++i) {
@@ -452,7 +472,7 @@ int main(int argc, char *argv[]) {
       // We start here.
       center = center + screw_radius;
     }
-    printer->MoveTo(center, i > 0 ? total_height + 5 : 5);
+    printer->MoveTo(center, i > 0 ? total_height + kHoverPos : kHoverPos);
     const float polygon_len = CalcPolygonLen(polygon);
     const float area = polygon_len * total_height * 2;  // inside and out.
     float layer_feedrate =  polygon_len / min_layer_time;
@@ -483,15 +503,25 @@ int main(int argc, char *argv[]) {
                         layers * spiral_layer_distance, spiral_layer_distance/2,
                         spiral_layer_distance);
     }
-    CreateExtrusion(polygon, printer, center, layer_height, total_height,
-                    rotation_per_mm, lock_offset,
-                    temperature, temp_variation);
+    ExtrusionParams params = {
+      .feedrate = layer_feedrate,
+      .layer_height = layer_height,
+      .total_height = total_height,
+      .rotation_per_mm = rotation_per_mm,
+      .lock_offset = lock_offset,
+      .fan_on_height = fan_on,
+      .elephant_foot_multiplier = elephant_foot_multiplier,
+      .base_temp = temperature,
+      .temp_variation = temp_variation
+    };
+
+    CreateExtrusion(polygon, printer, center, params);
     const double travel = printer->GetExtrusionDistance();  // since last reset.
     total_travel += travel;
     total_time += travel / layer_feedrate;  // roughly (without acceleration)
     printer->SetSpeed(feed_mm_per_sec);
     printer->Retract();
-    printer->GoZPos(total_height + 5);
+    printer->GoZPos(total_height + kHoverPos);
     if (!matryoshka) {
       center = center + screw_radius + head_offset;
     }
@@ -503,7 +533,9 @@ int main(int argc, char *argv[]) {
 
   printer->Postamble();
   if (!do_postscript) {  // doesn't make sense to print for PostScript
-    fprintf(stderr, "Total time >= %.0f seconds; %.2fm filament\n",
-            total_time, total_travel * filament_extrusion_factor / 1000);
+    const int seconds = (int)total_time % 60;
+    const int minutes = (int)total_time / 60;
+    fprintf(stderr, "Total time >= %02d:%02d; %.2fm filament\n",
+            minutes, seconds, total_travel * filament_extrusion_factor / 1000);
   }
 }

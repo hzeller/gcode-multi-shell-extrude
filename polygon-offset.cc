@@ -16,8 +16,7 @@
 static bool is_centered(const Vector2D &centroid, const ClipperLib::Path &path) {
   int min_x = INT_MAX, min_y = INT_MAX;
   int max_x = INT_MIN, max_y = INT_MIN;
-  for (std::size_t i = 0; i < path.size(); ++i) {
-    const ClipperLib::IntPoint &p = path[i];
+  for (const ClipperLib::IntPoint &p : path) {
     if (p.X < min_x) min_x = p.X;
     if (p.X > max_x) max_x = p.X;
     if (p.Y < min_y) min_y = p.Y;
@@ -36,8 +35,7 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
 
   ClipperLib::Path path;
   Vector2D centroid;
-  for (std::size_t i = 0; i < polygon.size(); ++i) {
-    const Vector2D &p = polygon[i];
+  for (const Vector2D &p : polygon) {
     Vector2D clipper_point = p * kResolution;
     path.push_back(ClipperLib::IntPoint(clipper_point.x, clipper_point.y));
     centroid = centroid + clipper_point;
@@ -60,16 +58,15 @@ Polygon PolygonOffset(const Polygon &polygon, double offset,
 
   // A polygon might become pieces when offset. Use the one that is centered.
   ClipperLib::Path &centered_polygon = solutions[0];
-  for (std::size_t i = 0; i < solutions.size(); ++i) {
-    if (is_centered(centroid, solutions[i])) {
-      centered_polygon = solutions[i];
+  for (const ClipperLib::Path &solution : solutions) {
+    if (is_centered(centroid, solution)) {
+      centered_polygon = solution;
       break;
     }
   }
 
   Polygon tmp;
-  for (std::size_t i = 0; i < centered_polygon.size(); ++i) {
-    const ClipperLib::IntPoint &p = centered_polygon[i];
+  for (const ClipperLib::IntPoint &p : centered_polygon) {
     tmp.push_back(Vector2D(p.X / kResolution, p.Y / kResolution));
   }
 

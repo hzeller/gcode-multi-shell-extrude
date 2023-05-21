@@ -58,7 +58,10 @@ Synopsis:
     --layer-height <value>  [-l]: Height of each layer (default: '0.16')
     --shell-thickness <value>   : Thickness of shell (default: '0.80')
     --feed-rate <value>     [-f]: maximum, in mm/s (default: '100.00')
-    --layer-time <value>    [-T]: Min time per layer; upper bound for feed-rate (default: '8.00')
+    --layer-time <value>    [-T]: Min time per layer; upper bound for feed-rate (default: '3.00')
+    --fan-on-height <value>     : Height to switch on fan (default: '0.30')
+    --slender-elephant <value>  : Extrusion multiplier at first two layer heights to prevent elephant foot (default: '0.90')
+    --retract <value>           : Millimeter of retract (default: '1.20')
 
 [ Printer Parameters ]
     --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')

@@ -88,4 +88,3 @@ typedef TypedParameter<bool> BoolParam;
 typedef TypedParameter<Vector2D> Vector2DParam;
 
 #endif  // SHELL_EXTRUDE_CONFIG_VALUES_H_
-

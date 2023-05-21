@@ -43,7 +43,8 @@ public:
   virtual void MoveTo(const Vector2D &pos, double z) = 0;
 
   // Extrude/"Line" to absolute position.
-  virtual void ExtrudeTo(const Vector2D &pos, double z) = 0;
+  virtual void ExtrudeTo(const Vector2D &pos, double z,
+                         double extrusion_multiplier) = 0;
   virtual void SwitchFan(bool on) = 0;
   virtual double GetExtrusionDistance() = 0;
   // Nice-to-have. Mostly for visualization reasons, doesn't change
@@ -54,6 +55,7 @@ public:
 // "extrusion_mm_to_e_axis_factor" translates mm extruded length to E-axis
 // output.
 Printer *CreateGCodePrinter(double extrusion_mm_to_e_axis_factor,
+                            double retract,
                             double temperature, double bed_temp);
 
 // Create printer that outputs PostScript to stdout.
