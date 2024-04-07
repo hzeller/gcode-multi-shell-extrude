@@ -533,9 +533,12 @@ int main(int argc, char *argv[]) {
 
   printer->Postamble();
   if (!do_postscript) {  // doesn't make sense to print for PostScript
-    const int seconds = (int)total_time % 60;
-    const int minutes = (int)total_time / 60;
-    fprintf(stderr, "Total time >= %02d:%02d; %.2fm filament\n",
+    int t = (int)total_time;
+    const int hours = t / 3600;
+    t %= 3600;
+    const int minutes = t / 60;
+    const int seconds = t % 60;
+    fprintf(stderr, "Total time >= %02d:%02d:%02d; %.2fm filament\n", hours,
             minutes, seconds, total_travel * filament_extrusion_factor / 1000);
   }
 }
