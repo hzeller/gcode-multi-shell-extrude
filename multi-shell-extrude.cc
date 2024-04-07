@@ -86,6 +86,7 @@ struct ExtrusionParams {
   double lock_offset;
   double fan_on_height;
   double elephant_foot_multiplier;
+  double first_layer_feedrate_multiplier;
 
   float base_temp;
   float temp_variation;
@@ -156,7 +157,6 @@ static void CreateExtrusion(const Polygon &extrusion_polygon, Printer *printer,
       // First move slowly, so that we wipe potential nozzle leak extrusion
       printer->SetSpeed(std::min(params.feedrate / 3, 15.0));
       printer->MoveTo(p[0] + center, height + z_bottom_offset);
-      printer->SetSpeed(params.feedrate);
     }
 
     for (int i = 0; i < (int)p.size(); ++i) {
@@ -169,12 +169,17 @@ static void CreateExtrusion(const Polygon &extrusion_polygon, Printer *printer,
       const double a = angle + fraction * rotation_per_layer;
       const Vector2D point = rotate(p[i], a);
       const double z = height + params.layer_height * fraction;
+      const bool is_initial_layers = z < 2 * params.layer_height;
+      printer->SetSpeed(is_initial_layers
+                            ? params.feedrate *
+                                  params.first_layer_feedrate_multiplier
+                            : params.feedrate);
       // Start only extruding when min z-offset reached and also stop extruding
       // at the top to wipe off excess
       if (z > z_bottom_offset / 2 &&
           z < params.total_height - 0.30 * params.layer_height) {
         printer->ExtrudeTo(point + center, z,
-                           (height < 2*params.layer_height)
+                           (is_initial_layers)
                            ? params.elephant_foot_multiplier
                            : 1.0);
       } else {
@@ -276,7 +281,7 @@ int main(int argc, char *argv[]) {
   IntParam screw_count    (2,     "number", 'n', "Number of screws to be printed");
   FloatParam initial_shell(0,     "start-offset", 0, "Initial offset for first polygon");
   FloatParam shell_increment(1.2, "offset", 'R', "Offset increment between screws - the clearance");
-  FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05");
+  FloatParam lock_offset  (-1,    "lock-offset", 0, "EXPERIMENTAL offset to stop screw at end; Approx value: (offset - shell_thickness)/2 + 0.05");
   FloatParam brim(0, "brim", 0, "Add brim of this size on the bottom for better stability");
   FloatParam brim_spiral_factor(0.55, "brim-spiral-factor", 0,
                                "Distance between spirals in brim as factor of shell-thickness");
@@ -291,7 +296,7 @@ int main(int argc, char *argv[]) {
   FloatParam fan_on (0.3,  "fan-on-height", 0, "Height to switch on fan");
   FloatParam elephant_foot_multiplier (0.9,  "slender-elephant", 0, "Extrusion multiplier at first two layer heights to prevent elephant foot");
   FloatParam retract_amount (1.2, "retract", 0, "Millimeter of retract");
-
+  FloatParam first_layer_feed_multiplier (0.7, "first-layer-speed", 0, "Feedrate multiplier for first layer");
   ParamHeadline h5("Printer Parameters");
   FloatParam nozzle_diameter(0.4, "nozzle-diameter", 0, "Diameter of extruder nozzle");
   FloatParam bed_temp(-1, "bed-temp", 0, "Bed temperature.");
@@ -511,6 +516,7 @@ int main(int argc, char *argv[]) {
       .lock_offset = lock_offset,
       .fan_on_height = fan_on,
       .elephant_foot_multiplier = elephant_foot_multiplier,
+      .first_layer_feedrate_multiplier = first_layer_feed_multiplier,
       .base_temp = temperature,
       .temp_variation = temp_variation
     };

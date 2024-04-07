@@ -17,7 +17,7 @@ public:
   GCodePrinter(double extrusion_factor, double retract_amount,
                double temperature, double bed_temp)
     : filament_extrusion_factor_(extrusion_factor),
-      retract_amount_(retract_amount),
+      retract_amount_(retract_amount), current_feedrate_(-1),
       temperature_(temperature), bed_temp_(bed_temp), extrude_dist_(0) {}
 
   virtual void Preamble(const Vector2D &machine_limit,
@@ -94,8 +94,11 @@ public:
   }
 
   virtual void SetSpeed(double feed_mm_per_sec) {
-    printf("G1 F%.1f  ; feedrate=%.1fmm/s\n", feed_mm_per_sec * 60,
-           feed_mm_per_sec);
+    if (feed_mm_per_sec != current_feedrate_) {
+      printf("G1 F%.1f  ; feedrate=%.1fmm/s\n", feed_mm_per_sec * 60,
+             feed_mm_per_sec);
+      current_feedrate_ = feed_mm_per_sec;
+    }
   }
   virtual void GoZPos(double z) {
     printf("G1 Z%.3f\n", z);
@@ -135,6 +138,7 @@ public:
 private:
   const double filament_extrusion_factor_;
   const double retract_amount_;
+  double current_feedrate_;
   double temperature_;
   double bed_temp_;
   double last_x, last_y, last_z;
