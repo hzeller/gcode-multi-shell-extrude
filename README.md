@@ -48,7 +48,7 @@ Synopsis:
     --number <value>        [-n]: Number of screws to be printed (default: '2')
     --start-offset <value>      : Initial offset for first polygon (default: '0.00')
     --offset <value>        [-R]: Offset increment between screws - the clearance (default: '1.20')
-    --lock-offset <value>       : EXPERIMENTAL offset to stop screw at end; (radius_increment - 0.8)/2 + 0.05 (default: '-1.00')
+    --lock-offset <value>       : EXPERIMENTAL offset to stop screw at end; Approx value: (offset - shell_thickness)/2 + 0.05 (default: '-1.00')
     --brim <value>              : Add brim of this size on the bottom for better stability (default: '0.00')
     --brim-spiral-factor <value>: Distance between spirals in brim as factor of shell-thickness (default: '0.55')
     --brim-smooth-radius <value>: Smoothing of brim connection to polygon to not get lost in inner details (default: '0.00')
@@ -62,6 +62,7 @@ Synopsis:
     --fan-on-height <value>     : Height to switch on fan (default: '0.30')
     --slender-elephant <value>  : Extrusion multiplier at first two layer heights to prevent elephant foot (default: '0.90')
     --retract <value>           : Millimeter of retract (default: '1.20')
+    --first-layer-speed <value> : Feedrate multiplier for first layer (default: '0.70')
 
 [ Printer Parameters ]
     --nozzle-diameter <value>   : Diameter of extruder nozzle (default: '0.40')
