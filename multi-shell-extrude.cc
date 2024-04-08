@@ -170,10 +170,21 @@ static void CreateExtrusion(const Polygon &extrusion_polygon, Printer *printer,
       const Vector2D point = rotate(p[i], a);
       const double z = height + params.layer_height * fraction;
       const bool is_initial_layers = z < 2 * params.layer_height;
-      printer->SetSpeed(is_initial_layers
-                            ? params.feedrate *
-                                  params.first_layer_feedrate_multiplier
-                            : params.feedrate);
+      // Speed: keep slow while initial layers, then lerp-ing up to full
+      // speed within 4 more layers
+      if (is_initial_layers) {
+        printer->SetSpeed(params.feedrate *
+                          params.first_layer_feedrate_multiplier);
+      } else if (z < 4 * params.layer_height) {
+        const double range = 1.0 - params.first_layer_feedrate_multiplier;
+        const double lerp = (z - 2 *  params.layer_height)
+          / ((4 - 2) * params.layer_height);
+        printer->SetSpeed(params.feedrate *
+                          (params.first_layer_feedrate_multiplier
+                           + lerp * range));
+      } else {
+        printer->SetSpeed(params.feedrate);
+      }
       // Start only extruding when min z-offset reached and also stop extruding
       // at the top to wipe off excess
       if (z > z_bottom_offset / 2 &&
